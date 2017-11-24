@@ -33,10 +33,13 @@ from sklearn.model_selection import cross_val_score
 # from keras.layers import LSTM
 # from sklearn.preprocessing import MinMaxScaler
 # from sklearn.metrics import mean_squared_error
+prediction_list = []
  
 def create_timestamp(datestr, format="%Y-%m-%d %H:%M:%S"):
   return time.mktime(time.strptime(datestr, format))
 
+predicted = 'do nothing'
+balances = None
 class GetHandler(BaseHTTPRequestHandler):
   def do_GET(self):
     self.send_response(200)
@@ -48,7 +51,15 @@ class GetHandler(BaseHTTPRequestHandler):
       f.close()
     else:
       self.end_headers()
-      self.wfile.write('<html><body><img width="800" height="600" src="data/graph.png"></body></html>')
+      html = '<html><body><img width="800" height="600" src="data/graph.png">' 
+      html += '<div>' + str(prediction_list) + '</div>'
+
+      if balances != None:
+        for coin in balances:
+          html += '<div>' + coin + ', ' + str(balances[coin]) + '</div>'
+      html += '</body></html>' 
+
+      self.wfile.write(html)
 
   def log_message(self, format, *args):
     return
@@ -291,15 +302,67 @@ class Poloniex:
   def get_features(self, quotes, i):
     features = {}
 
-    resistances = [q[0] for q in quotes if q[1] == 0]
-    supports    = [q[0] for q in quotes if q[1] == 1]
-    features['close_price'       ] = quotes[i][0][2]
-    features['last_bottom'       ] = supports[-1][2]
-    features['last_resistance'   ] = resistances[-1][2]
-    features['close_price_prev_1'] = quotes[i-1][0][2]
-    features['close_price_prev_2'] = quotes[i-2][0][2]
-    features['close_price_prev_3'] = quotes[i-3][0][2]
-    features['close_price_prev_4'] = quotes[i-4][0][2]
+    mean = sum([q[0][2] for q in quotes[:i]]) / (i + 1)
+    resistances = [q[0] for q in quotes[:i] if q[1] == 0]
+    supports    = [q[0] for q in quotes[:i] if q[1] == 1]
+    # features['open_price'        ] = quotes[i][0][1]
+    # features['close_price'       ] = quotes[i][0][2]
+    # features['close_price'       ] = quotes[i][0][2]
+    # features['high_price'        ] = quotes[i][0][3]
+
+    if len(resistances) > 2:
+      features['last_resistance'   ] = resistances[-1][2]
+      features['last_resistance_2'   ] = resistances[-2][2]
+      # features['last_resistance_3'   ] = resistances[-3][2]
+    else:
+      features['last_resistance'   ] = quotes[i][0][2]
+      features['last_resistance_2'   ] = quotes[i][0][2]
+      # features['last_resistance_3'   ] = quotes[i][0][2]
+
+    if len(supports) > 2:
+      features['last_support'      ] = supports[-1][2]
+      features['last_support_2'      ] = supports[-2][2]
+      # features['last_support_3'      ] = supports[-3][2]
+    else:
+      features['last_support'   ] = quotes[i][0][2]
+      features['last_support_2' ] = quotes[i][0][2]
+      # features['last_support_3' ] = quotes[i][0][2]
+
+    features['close_price_higher_than_last_price' ] = quotes[i][0][2] > quotes[i-1][0][2]
+    # features['close_price_higher_than_2_prices' ]   = quotes[i][0][2] > quotes[i-1][0][2] and quotes[i][0][2] > quotes[i-2][0][2]
+    # features['close_price_higher_than_last_price_2' ] = quotes[i-1][0][2] > quotes[i-2][0][2]
+    # features['close_price_higher_than_last_price_3' ] = quotes[i-2][0][2] > quotes[i-3][0][2]
+    # features['close_price_higher_than_last_price_4' ] = quotes[i-3][0][2] > quotes[i-4][0][2]
+    features['close_price_higher_than_resistance' ] = quotes[i][0][2] > features['last_resistance'] 
+    features['close_price_lower_than_support'     ] = quotes[i][0][2] < features['last_support'   ] 
+    features['close_price_higher_than_resistance_2' ] = quotes[i][0][2] > features['last_resistance_2'] 
+    features['close_price_lower_than_support_2'     ] = quotes[i][0][2] < features['last_support_2'   ] 
+    features['low_price_higher_than_resistance' ]   = quotes[i][0][4] > features['last_resistance'] 
+    features['low_price_lower_than_support'     ]   = quotes[i][0][4] < features['last_support'   ] 
+    features['1_red_candle'     ] = quotes[i][0][2] < quotes[i][0][1]
+    features['2_red_candles'     ] = quotes[i][0][2] < quotes[i][0][1] and quotes[i-1][0][2] < quotes[i-1][0][1]
+    features['3_red_candles'     ] = quotes[i][0][2] < quotes[i][0][1] and quotes[i-1][0][2] < quotes[i-1][0][1] and quotes[i-2][0][2] < quotes[i-2][0][1]
+    # features['close_price_much_lower_than_support' ] = float(features['last_support']) / quotes[i][0][2] < 0.99
+    # features['close_price_higher_than_mean'       ] = quotes[i][0][2] > mean
+
+    features['prev_price_1_lower'] = quotes[i-1][0][2] < quotes[i][0][2]
+    features['prev_price_2_lower'] = quotes[i-2][0][2] < quotes[i][0][2]
+    features['prev_price_3_lower'] = quotes[i-3][0][2] < quotes[i][0][2]
+    features['prev_price_4_lower'] = quotes[i-4][0][2] < quotes[i][0][2]
+    features['prev_high_price_1_lower'] = quotes[i-1][0][3] < quotes[i][0][2]
+    features['prev_high_price_2_lower'] = quotes[i-2][0][3] < quotes[i][0][2]
+    features['prev_high_price_3_lower'] = quotes[i-3][0][3] < quotes[i][0][2]
+    features['prev_high_price_4_lower'] = quotes[i-4][0][3] < quotes[i][0][2]
+
+
+    # features['close_price_prev_1'] = quotes[i-1][0][2]
+    # features['close_price_prev_2'] = quotes[i-2][0][2]
+    # features['close_price_prev_3'] = quotes[i-3][0][2]
+    # features['close_price_prev_4'] = quotes[i-4][0][2]
+    # features['high_price_prev_1' ] = quotes[i-1][0][3]
+    # features['high_price_prev_2' ] = quotes[i-2][0][3]
+    # features['high_price_prev_3' ] = quotes[i-3][0][3]
+    # features['high_price_prev_4' ] = quotes[i-4][0][3]
     return features
 
   def create_feature_vectors(self, quotes):
@@ -310,19 +373,19 @@ class Poloniex:
     return feature_vectors 
 
   def plot_candlesticks(self):
-    quotes = self.get_candlesticks(datetime.timedelta(minutes=30))
+    quotes = self.get_candlesticks(datetime.timedelta(minutes=10))
     quotes = self.get_inverting_points(quotes)
     x = self.create_feature_vectors(quotes)
     y = [q[1] for q in quotes[4:]]
 
     x = [[e[1] for e in el.items()] for el in x]
 
-    m = GaussianNB()
-    # m = LogisticRegression()
+    # m = GaussianNB()
+    m = LogisticRegression()
     # m = LinearSVC(C=1.0)
     # m = RandomForestClassifier(n_estimators=100)
 
-    m = m.fit(x, y)
+    m = m.fit(x[:-10], y[:-10])
     predicted = m.predict(x)
 
     scores = cross_val_score(m, x, y, cv=5)
@@ -333,11 +396,10 @@ class Poloniex:
     
     candlestick(ax, [q[0] for q in quotes], width=0.005)
     good_candles = [c[0] for c in quotes if c[1] == 1]
-    print good_candles
 
     buy_candles_x = [quotes[i][0][0] for i in range(4, len(quotes)) if predicted[i-4] == 1]
     buy_candles_y = [quotes[i][0][2] for i in range(4, len(quotes)) if predicted[i-4] == 1]
-    ax.scatter([p[0] for p in good_candles], [p[2] for p in good_candles], color='g')
+    # ax.scatter([p[0] for p in good_candles], [p[2] for p in good_candles], color='g')
     ax.scatter(buy_candles_x, buy_candles_y, color='y')
     # ax.scatter([p[0] for p in bad_candles], [p[2] for p in bad_candles], color='y')
 
@@ -346,15 +408,17 @@ class Poloniex:
     ax.xaxis.set_major_locator(locator)
     ax.xaxis.set_major_formatter(formatter)
    
-    circle1 = Ellipse((date2num(datetime.datetime.now() + datetime.timedelta(hours=-5)), 7800), 0.013, 10, color='b')
-    ax.add_artist(circle1)
+    # circle1 = Ellipse((date2num(datetime.datetime.now() + datetime.timedelta(hours=-5)), 7800), 0.013, 10, color='b')
+    # ax.add_artist(circle1)
     ax.xaxis_date()
     # ax.axis('equal')
     ax.autoscale_view()
     plt.setp(plt.gca().get_xticklabels(), rotation=45, horizontalalignment='right')
-    # fig.savefig('data/graph.png')
-    plt.show()
-    # plt.close()
+    fig.savefig('data/graph.png')
+    # plt.show()
+    plt.close()
+
+    return predicted[-1]
 
   def create_dataset(self, dataset, window_size=20, distance=4):
     dataX, dataY = [], []
@@ -366,86 +430,35 @@ class Poloniex:
       dataY.append(dataset[i + window_size + distance, 0])
     return numpy.array(dataX), numpy.array(dataY)
 
-  # def predict(self):
-  #   window = 5
-  #   distance = 30
-
-  #   quotes = p.get_candlesticks(datetime.timedelta(minutes = 1))
-  #   dataset = numpy.array([numpy.array([float(q[4])]) for q in quotes])
-
-  #   numpy.set_printoptions(threshold='nan')
-  #   scaler = MinMaxScaler(feature_range=(0, 1))
-
-  #   dataset = scaler.fit_transform(dataset)
-  # 
-  #   # Split into train and test sets.
-  #   train_size = int(len(dataset) * 0.9)
-  #   test_size = len(dataset) - train_size
-  #   train, test = dataset[0:train_size,:], dataset[train_size:len(dataset),:]
-
-  #   trainX, trainY = self.create_dataset(train, window, distance)
-  #   testX, testY = self.create_dataset(test, window, distance)
-  #   
-  #   # reshape input to be [samples, time steps, features]
-  #   trainX = numpy.reshape(trainX, (trainX.shape[0], 1, trainX.shape[1]))
-  #   testX = numpy.reshape(testX, (testX.shape[0], 1, testX.shape[1]))
-
-  #   # create and fit the LSTM network
-  #   model = Sequential()
-  #   model.add(LSTM(100, input_shape=(1, window)))
-  #   model.add(Dense(1))
-  #   model.compile(loss='mean_squared_error', optimizer='adam')
-  #   model.fit(trainX, trainY, epochs=25, batch_size=3, verbose=2)
-
-  #   # make predictions
-  #   trainPredict = model.predict(trainX)
-  #   testPredict = model.predict(testX)
-  #   
-  #   # invert predictions
-  #   # print trainPredict
-  #   trainPredict = scaler.inverse_transform(trainPredict)
-  #   trainY = scaler.inverse_transform([trainY])
-  #   testPredict = scaler.inverse_transform(testPredict)
-  #   testY = scaler.inverse_transform([testY])
-  #   # calculate root mean squared error
-  #   trainScore = math.sqrt(mean_squared_error(trainY[0], trainPredict[:,0]))
-  #   print('Train Score: %.2f RMSE' % (trainScore))
-  #   testScore = math.sqrt(mean_squared_error(testY[0], testPredict[:,0]))
-  #   print('Test Score: %.2f RMSE' % (testScore))
-
-  #   # shift train predictions for plotting
-  #   trainPredictPlot = numpy.empty_like(dataset)
-  #   trainPredictPlot[:, :] = numpy.nan
-
-  #   trainPredictPlot[window + distance:len(trainPredict) + window + distance, :] = trainPredict
-  #   # trainPredictPlot = trainPredict
-
-  #   # shift test predictions for plotting
-  #   # testPredictPlot = numpy.empty_like(dataset)
-  #   # testPredictPlot[:, :] = numpy.nan
-  #   # testPredictPlot[len(trainPredict)+(look_back*2)+1:len(dataset)-1, :] = testPredict
-
-  #   # plot baseline and predictions
-  #   plt.plot(scaler.inverse_transform(dataset[:, 0]))
-  #   plt.plot(trainPredictPlot)
-  #   # plt.plot(testPredictPlot)
-  #   plt.show()
-
 p = Poloniex(
+  'GCRWWGGU-SXE53KFV-XEP9MPDZ-9LCDDV4K',
+  '346fb5d4bd593d0a796ca24defa66bb1947da3cab31542048bba751ee700135285e4f3b008fdf830e672137634ccd5742118376cf499b7b5cb25667e564e5cb4'
 )
 
-# p.predict()
-p.plot_candlesticks()
+def serve():
+  server = HTTPServer(('localhost', 8080), GetHandler)
+  server.serve_forever()
 
+t1 = threading.Thread(target=serve)
+t1.daemon = True
+t1.start()
 
-# def serve():
-#   server = HTTPServer(('localhost', 8080), GetHandler)
-#   server.serve_forever()
-# 
-# t1 = threading.Thread(target=serve)
-# t1.daemon = True
-# t1.start()
-# 
-# while True:
-#   p.plot_candlesticks()
-#   time.sleep(10)
+while True:
+  p.update_records()
+  predicted = p.plot_candlesticks()
+  if (predicted == 0):
+    predicted = 'sell'
+  elif (predicted == 1):
+    predicted = 'buy'
+  else:
+    predicted = 'do nothing'
+
+  prediction_list.append(predicted)
+  time.sleep(5)
+  balances = p.returnBalances()
+
+  time.sleep(30)
+
+# print p.returnOpenOrders('USDT_BCH')
+# print p.sell('USDT_BCH', 1300.00, 0.001)
+# print p.cancel('USDT_BCH', 18217952003)
