@@ -10,45 +10,6 @@ from poloniex import Poloniex
 
 logger = logging.getLogger(__name__)
 
-class Ticker(object):
-  def __init__(self, api, interval=10):
-    self.api = api
-    self.db = MongoClient().poloniex
-    self.interval = interval
-
-  def updateTicker(self):
-    tick = self.api.returnTicker()
-    for market in tick:
-      self.db['ticker'].update_one(
-        {'_id': market},
-        {'$set': tick[market]},
-        upsert=True
-      )
-     
-    tick['time'] = datetime.datetime.now()
-    self.db['ticker_buffer'].insert_one(tick)
-    logger.info('Ticker updated')
-
-  def __call__(self):
-    return list(self.db['ticker'].find())
-
-  def run(self):
-    self._running = True
-    while self._running:
-      self.updateTicker()
-      time.sleep(self.interval)
-
-  def start(self):
-    self._thread = Thread(target=self.run)
-    self._thread.daemon = True
-    self._thread.start()
-    logger.info('Ticker started')
-
-  def stop(self):
-    self._running = False
-    self._thread.join()
-    logger.info('Ticker stopped')
-
 class DB:
   timeskip = datetime.timedelta(hours=1)
   lifespan = datetime.timedelta(days=5)
@@ -109,15 +70,15 @@ class DB:
         continue
 
       self.add_trades(collection, trades)
-      print 'Added', len(trades), 'trades from', start, 'to', end
-      print 'Total trade records:', collection.find().count()
+      logger.info('Added ' + str(len(trades)) + ' trades from ' + str(start) + ' to ' + str(end))
+      logger.info('Total trade records: ' + str(collection.find().count()))
 
       if end > datetime.datetime.now():
         break
 
       time.sleep(5)
       start += DB.timeskip
-    print 'Finished updating', currency_pair
+    logger.info('Finished updating ' + str(currency_pair))
 
   '''
   Update forward all currencies USD tethered.
@@ -129,7 +90,7 @@ class DB:
     ]
 
     for currency_pair in currencies:
-      print 'Updating', currency_pair
+      logger.info('Updating ' + str(currency_pair))
       self.clean_old_records(currency_pair)
       self.update_trade_records(currency_pair)
 
@@ -178,23 +139,51 @@ class DB:
     candles.append((current_timestamp, open_p, close_p, high, low))
     return candles
 
-  def live_update(self):
-    logging.basicConfig(level=logging.INFO)
-    t = Ticker(self.poloniex)
-    t.start()
+class Ticker(object):
+  def __init__(self, db, api, interval=10):
+    self.api = api
+    self.db = db
+    self.mongo = MongoClient().poloniex
+    self.interval = interval
 
-    counter = 0
-    time.sleep(10)
-    while t._running:
-      try:
+  def updateTicker(self):
+    tick = self.api.returnTicker()
+    for market in tick:
+      self.mongo['ticker'].update_one(
+        {'_id': market},
+        {'$set': tick[market]},
+        upsert=True
+      )
+     
+    tick['time'] = datetime.datetime.now()
+    self.mongo['ticker_buffer'].insert_one(tick)
+    logger.info('Ticker updated')
+
+    return list(self.mongo['ticker'].find())
+
+  def run(self):
+    self._running = True
+    self.counter = 0
+    while self._running:
+      self.updateTicker()
+      if self.counter % 100 == 0:
+        logger.info('Updating currencies')
+
         # Update trade history every 1000 seconds.
-        if counter % 100 == 0:
-          print 'wtf'
-          self.update_all_currencies()
-        time.sleep(10)
-        counter += 1
-      except:
-        t.stop()
+        self.db.update_all_currencies()
+      time.sleep(self.interval)
+      self.counter += 1
+
+  def start(self):
+    self._thread = Thread(target=self.run)
+    self._thread.daemon = True
+    self._thread.start()
+    logger.info('Ticker started')
+
+  def stop(self):
+    self._running = False
+    self._thread.join()
+    logger.info('Ticker stopped')
 
 if __name__ == "__main__":
   if not os.path.isfile("key.txt"):
@@ -206,9 +195,13 @@ if __name__ == "__main__":
   poloniex = Poloniex(key, secret)
   db = DB(poloniex)
 
-  # db.update_trade_records('usdt_btc', -1)
-  # db.fill_gaps('usdt_btc')
-  db.live_update()
-  # db.clean_database('USDT_BTC')
-  # db.update_all_currencies()
-  # print db.get_candlesticks('USDT_BTC')
+  logging.basicConfig(level=logging.INFO)
+  t = Ticker(db, poloniex)
+  t.start()
+
+  time.sleep(10)
+  while t._running:
+    try:
+      time.sleep(10)
+    except:
+      t.stop()

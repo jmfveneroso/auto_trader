@@ -9,14 +9,6 @@ import os
 import threading
 import datetime
 import hmac,hashlib
-import matplotlib
-import matplotlib.pyplot as plt
-from matplotlib.dates import date2num
-from matplotlib.dates import DateFormatter, WeekdayLocator, DayLocator, HourLocator, MinuteLocator, MONDAY, AutoDateLocator, AutoDateFormatter
-from matplotlib.finance import candlestick
-from BaseHTTPServer import BaseHTTPRequestHandler
-from BaseHTTPServer import HTTPServer
-from matplotlib.patches import Ellipse, Circle
 from sklearn import datasets
 from sklearn.naive_bayes import GaussianNB
 from sklearn.linear_model import LogisticRegression
@@ -172,232 +164,166 @@ class Poloniex:
   def cancel(self,currencyPair,orderNumber):
     return self.api_query('cancelOrder',{"currencyPair":currencyPair,"orderNumber":orderNumber})
 
-  def update_records(self):
-    while True:
-      last_id = 0
-      last_timestamp = None
-      if os.path.isfile("data/usdt_btc.csv"):
-        with open("data/usdt_btc.csv", "r") as f:
-          record = f.readlines()[-1].strip().split(',')
-          last_id = int(record[0])
-          last_timestamp = datetime.datetime.strptime(record[3], '%Y-%m-%d %H:%M:%S') 
+  # def get_inverting_points(self, quotes):
+  #   good_candles, bad_candles = [], []
+  #   for i in range(0, len(quotes)):
+  #     current_price = float(quotes[i][2])
+  #     max_price, min_price = 0, 99999999
+  #     keep_buying, keep_selling = True, True
 
-      start = datetime.datetime.now() + datetime.timedelta(hours = -106)
-      if last_timestamp != None:
-        start = last_timestamp + datetime.timedelta(minutes = -10)
-        
-      end = start + datetime.timedelta(hours = 6)
-      trades = p.returnMarketTradeHistory('USDT_BTC', start, end)
-      
-      with open("data/usdt_btc.csv", "a") as f:
-        for t in reversed(trades):
-          if int(t['tradeID']) > last_id:
-            date = '{:%Y-%m-%d %H:%M:%S}'.format(t['date'])
-            record = '%d,%f,%f,%s,%f,%s,%d\n' % (
-              int(t['tradeID']), float(t['amount']), float(t['rate']), date, 
-              float(t['total']), str(t['type']), int(t['globalTradeID'])
-            )
-            
-            f.write(record)
-            f.flush()
-      print 'Downloaded page'
-      if end > datetime.datetime.now():
-        break
-      time.sleep(10)
+  #     for j in range(i + 1, len(quotes)):
+  #       next_price = float(quotes[j][2])
 
-  def get_next_candle_time(self, time, candle_width=datetime.timedelta(minutes=10)):
-    next_candle = time.replace(minute=0, second=0)
-    while next_candle < time:
-      next_candle += candle_width
-    return next_candle
+  #       if keep_buying and next_price > max_price:
+  #         max_price = next_price
 
-  def get_candlesticks(self, candle_width):
-    candles = []
-    if not os.path.isfile("data/usdt_btc.csv"):
-      return []
+  #       if keep_selling and next_price < min_price:
+  #         min_price = next_price
 
-    with open("data/usdt_btc.csv", "r") as f:
-      open_p, close_p, high, low = 0, 0, 0, 0
-      current_timestamp = None
-      for line in f:
-        record = line.split(',')
-        price = float(record[2])
-        timestamp = datetime.datetime.strptime(record[3], '%Y-%m-%d %H:%M:%S')
-        candle_time = self.get_next_candle_time(timestamp, candle_width)
+  #       # Price can reduce at most 10%.
+  #       if next_price < 0.99 * current_price:
+  #         keep_buying = False
 
-        if candle_time == current_timestamp:
-          if price < low: low = price
-          if price > high: high = price
-          close_p = price
-        else:
-          if current_timestamp != None:
-            candles.append((date2num(current_timestamp), open_p, close_p, high, low))
-          open_p, close_p, high, low = price, price, price, price
-          current_timestamp = candle_time
+  #       # Price can reduce at most 10%.
+  #       if next_price > 1.02 * current_price:
+  #         keep_selling = False
 
-      candles.append((date2num(current_timestamp), open_p, close_p, high, low))
-    return candles
+  #     if float(min_price) / current_price < 0.99:
+  #       quotes[i] = (quotes[i], 0)
+  #     elif float(max_price) / current_price > 1.02:
+  #       quotes[i] = (quotes[i], 1)
+  #     else:
+  #       quotes[i] = (quotes[i], 2)
 
-  def get_inverting_points(self, quotes):
-    good_candles, bad_candles = [], []
-    for i in range(0, len(quotes)):
-      current_price = float(quotes[i][2])
-      max_price, min_price = 0, 99999999
-      keep_buying, keep_selling = True, True
+  #   return quotes
 
-      for j in range(i + 1, len(quotes)):
-        next_price = float(quotes[j][2])
+  # def get_features(self, quotes, i):
+  #   features = {}
 
-        if keep_buying and next_price > max_price:
-          max_price = next_price
+  #   mean = sum([q[0][2] for q in quotes[:i]]) / (i + 1)
+  #   resistances = [q[0] for q in quotes[:i] if q[1] == 0]
+  #   supports    = [q[0] for q in quotes[:i] if q[1] == 1]
+  #   # features['open_price'        ] = quotes[i][0][1]
+  #   # features['close_price'       ] = quotes[i][0][2]
+  #   # features['close_price'       ] = quotes[i][0][2]
+  #   # features['high_price'        ] = quotes[i][0][3]
 
-        if keep_selling and next_price < min_price:
-          min_price = next_price
+  #   if len(resistances) > 2:
+  #     features['last_resistance'   ] = resistances[-1][2]
+  #     features['last_resistance_2'   ] = resistances[-2][2]
+  #     # features['last_resistance_3'   ] = resistances[-3][2]
+  #   else:
+  #     features['last_resistance'   ] = quotes[i][0][2]
+  #     features['last_resistance_2'   ] = quotes[i][0][2]
+  #     # features['last_resistance_3'   ] = quotes[i][0][2]
 
-        # Price can reduce at most 10%.
-        if next_price < 0.99 * current_price:
-          keep_buying = False
+  #   if len(supports) > 2:
+  #     features['last_support'      ] = supports[-1][2]
+  #     features['last_support_2'      ] = supports[-2][2]
+  #     # features['last_support_3'      ] = supports[-3][2]
+  #   else:
+  #     features['last_support'   ] = quotes[i][0][2]
+  #     features['last_support_2' ] = quotes[i][0][2]
+  #     # features['last_support_3' ] = quotes[i][0][2]
 
-        # Price can reduce at most 10%.
-        if next_price > 1.02 * current_price:
-          keep_selling = False
+  #   features['close_price_higher_than_last_price' ] = quotes[i][0][2] > quotes[i-1][0][2]
+  #   # features['close_price_higher_than_2_prices' ]   = quotes[i][0][2] > quotes[i-1][0][2] and quotes[i][0][2] > quotes[i-2][0][2]
+  #   # features['close_price_higher_than_last_price_2' ] = quotes[i-1][0][2] > quotes[i-2][0][2]
+  #   # features['close_price_higher_than_last_price_3' ] = quotes[i-2][0][2] > quotes[i-3][0][2]
+  #   # features['close_price_higher_than_last_price_4' ] = quotes[i-3][0][2] > quotes[i-4][0][2]
+  #   features['close_price_higher_than_resistance' ] = quotes[i][0][2] > features['last_resistance'] 
+  #   features['close_price_lower_than_support'     ] = quotes[i][0][2] < features['last_support'   ] 
+  #   features['close_price_higher_than_resistance_2' ] = quotes[i][0][2] > features['last_resistance_2'] 
+  #   features['close_price_lower_than_support_2'     ] = quotes[i][0][2] < features['last_support_2'   ] 
+  #   features['low_price_higher_than_resistance' ]   = quotes[i][0][4] > features['last_resistance'] 
+  #   features['low_price_lower_than_support'     ]   = quotes[i][0][4] < features['last_support'   ] 
+  #   features['1_red_candle'     ] = quotes[i][0][2] < quotes[i][0][1]
+  #   features['2_red_candles'     ] = quotes[i][0][2] < quotes[i][0][1] and quotes[i-1][0][2] < quotes[i-1][0][1]
+  #   features['3_red_candles'     ] = quotes[i][0][2] < quotes[i][0][1] and quotes[i-1][0][2] < quotes[i-1][0][1] and quotes[i-2][0][2] < quotes[i-2][0][1]
+  #   # features['close_price_much_lower_than_support' ] = float(features['last_support']) / quotes[i][0][2] < 0.99
+  #   # features['close_price_higher_than_mean'       ] = quotes[i][0][2] > mean
 
-      if float(min_price) / current_price < 0.99:
-        quotes[i] = (quotes[i], 0)
-      elif float(max_price) / current_price > 1.02:
-        quotes[i] = (quotes[i], 1)
-      else:
-        quotes[i] = (quotes[i], 2)
-
-    return quotes
-
-  def get_features(self, quotes, i):
-    features = {}
-
-    mean = sum([q[0][2] for q in quotes[:i]]) / (i + 1)
-    resistances = [q[0] for q in quotes[:i] if q[1] == 0]
-    supports    = [q[0] for q in quotes[:i] if q[1] == 1]
-    # features['open_price'        ] = quotes[i][0][1]
-    # features['close_price'       ] = quotes[i][0][2]
-    # features['close_price'       ] = quotes[i][0][2]
-    # features['high_price'        ] = quotes[i][0][3]
-
-    if len(resistances) > 2:
-      features['last_resistance'   ] = resistances[-1][2]
-      features['last_resistance_2'   ] = resistances[-2][2]
-      # features['last_resistance_3'   ] = resistances[-3][2]
-    else:
-      features['last_resistance'   ] = quotes[i][0][2]
-      features['last_resistance_2'   ] = quotes[i][0][2]
-      # features['last_resistance_3'   ] = quotes[i][0][2]
-
-    if len(supports) > 2:
-      features['last_support'      ] = supports[-1][2]
-      features['last_support_2'      ] = supports[-2][2]
-      # features['last_support_3'      ] = supports[-3][2]
-    else:
-      features['last_support'   ] = quotes[i][0][2]
-      features['last_support_2' ] = quotes[i][0][2]
-      # features['last_support_3' ] = quotes[i][0][2]
-
-    features['close_price_higher_than_last_price' ] = quotes[i][0][2] > quotes[i-1][0][2]
-    # features['close_price_higher_than_2_prices' ]   = quotes[i][0][2] > quotes[i-1][0][2] and quotes[i][0][2] > quotes[i-2][0][2]
-    # features['close_price_higher_than_last_price_2' ] = quotes[i-1][0][2] > quotes[i-2][0][2]
-    # features['close_price_higher_than_last_price_3' ] = quotes[i-2][0][2] > quotes[i-3][0][2]
-    # features['close_price_higher_than_last_price_4' ] = quotes[i-3][0][2] > quotes[i-4][0][2]
-    features['close_price_higher_than_resistance' ] = quotes[i][0][2] > features['last_resistance'] 
-    features['close_price_lower_than_support'     ] = quotes[i][0][2] < features['last_support'   ] 
-    features['close_price_higher_than_resistance_2' ] = quotes[i][0][2] > features['last_resistance_2'] 
-    features['close_price_lower_than_support_2'     ] = quotes[i][0][2] < features['last_support_2'   ] 
-    features['low_price_higher_than_resistance' ]   = quotes[i][0][4] > features['last_resistance'] 
-    features['low_price_lower_than_support'     ]   = quotes[i][0][4] < features['last_support'   ] 
-    features['1_red_candle'     ] = quotes[i][0][2] < quotes[i][0][1]
-    features['2_red_candles'     ] = quotes[i][0][2] < quotes[i][0][1] and quotes[i-1][0][2] < quotes[i-1][0][1]
-    features['3_red_candles'     ] = quotes[i][0][2] < quotes[i][0][1] and quotes[i-1][0][2] < quotes[i-1][0][1] and quotes[i-2][0][2] < quotes[i-2][0][1]
-    # features['close_price_much_lower_than_support' ] = float(features['last_support']) / quotes[i][0][2] < 0.99
-    # features['close_price_higher_than_mean'       ] = quotes[i][0][2] > mean
-
-    features['prev_price_1_lower'] = quotes[i-1][0][2] < quotes[i][0][2]
-    features['prev_price_2_lower'] = quotes[i-2][0][2] < quotes[i][0][2]
-    features['prev_price_3_lower'] = quotes[i-3][0][2] < quotes[i][0][2]
-    features['prev_price_4_lower'] = quotes[i-4][0][2] < quotes[i][0][2]
-    features['prev_high_price_1_lower'] = quotes[i-1][0][3] < quotes[i][0][2]
-    features['prev_high_price_2_lower'] = quotes[i-2][0][3] < quotes[i][0][2]
-    features['prev_high_price_3_lower'] = quotes[i-3][0][3] < quotes[i][0][2]
-    features['prev_high_price_4_lower'] = quotes[i-4][0][3] < quotes[i][0][2]
+  #   features['prev_price_1_lower'] = quotes[i-1][0][2] < quotes[i][0][2]
+  #   features['prev_price_2_lower'] = quotes[i-2][0][2] < quotes[i][0][2]
+  #   features['prev_price_3_lower'] = quotes[i-3][0][2] < quotes[i][0][2]
+  #   features['prev_price_4_lower'] = quotes[i-4][0][2] < quotes[i][0][2]
+  #   features['prev_high_price_1_lower'] = quotes[i-1][0][3] < quotes[i][0][2]
+  #   features['prev_high_price_2_lower'] = quotes[i-2][0][3] < quotes[i][0][2]
+  #   features['prev_high_price_3_lower'] = quotes[i-3][0][3] < quotes[i][0][2]
+  #   features['prev_high_price_4_lower'] = quotes[i-4][0][3] < quotes[i][0][2]
 
 
-    # features['close_price_prev_1'] = quotes[i-1][0][2]
-    # features['close_price_prev_2'] = quotes[i-2][0][2]
-    # features['close_price_prev_3'] = quotes[i-3][0][2]
-    # features['close_price_prev_4'] = quotes[i-4][0][2]
-    # features['high_price_prev_1' ] = quotes[i-1][0][3]
-    # features['high_price_prev_2' ] = quotes[i-2][0][3]
-    # features['high_price_prev_3' ] = quotes[i-3][0][3]
-    # features['high_price_prev_4' ] = quotes[i-4][0][3]
-    return features
+  #   # features['close_price_prev_1'] = quotes[i-1][0][2]
+  #   # features['close_price_prev_2'] = quotes[i-2][0][2]
+  #   # features['close_price_prev_3'] = quotes[i-3][0][2]
+  #   # features['close_price_prev_4'] = quotes[i-4][0][2]
+  #   # features['high_price_prev_1' ] = quotes[i-1][0][3]
+  #   # features['high_price_prev_2' ] = quotes[i-2][0][3]
+  #   # features['high_price_prev_3' ] = quotes[i-3][0][3]
+  #   # features['high_price_prev_4' ] = quotes[i-4][0][3]
+  #   return features
 
-  def create_feature_vectors(self, quotes):
-    feature_vectors = []
-    for i in range(4, len(quotes)):
-      feature_vectors.append(self.get_features(quotes, i))
-       
-    return feature_vectors 
+  # def create_feature_vectors(self, quotes):
+  #   feature_vectors = []
+  #   for i in range(4, len(quotes)):
+  #     feature_vectors.append(self.get_features(quotes, i))
+  #      
+  #   return feature_vectors 
 
-  def plot_candlesticks(self):
-    quotes = self.get_candlesticks(datetime.timedelta(minutes=10))
-    quotes = self.get_inverting_points(quotes)
-    x = self.create_feature_vectors(quotes)
-    y = [q[1] for q in quotes[4:]]
+  # def plot_candlesticks(self):
+  #   quotes = self.get_candlesticks(datetime.timedelta(minutes=10))
+  #   quotes = self.get_inverting_points(quotes)
+  #   x = self.create_feature_vectors(quotes)
+  #   y = [q[1] for q in quotes[4:]]
 
-    x = [[e[1] for e in el.items()] for el in x]
+  #   x = [[e[1] for e in el.items()] for el in x]
 
-    # m = GaussianNB()
-    m = LogisticRegression()
-    # m = LinearSVC(C=1.0)
-    # m = RandomForestClassifier(n_estimators=100)
+  #   # m = GaussianNB()
+  #   m = LogisticRegression()
+  #   # m = LinearSVC(C=1.0)
+  #   # m = RandomForestClassifier(n_estimators=100)
 
-    m = m.fit(x[:-10], y[:-10])
-    predicted = m.predict(x)
+  #   m = m.fit(x[:-10], y[:-10])
+  #   predicted = m.predict(x)
 
-    scores = cross_val_score(m, x, y, cv=5)
-    print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
+  #   scores = cross_val_score(m, x, y, cv=5)
+  #   print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
 
-    fig, ax = plt.subplots()
-    fig.subplots_adjust(bottom=0.2)
-    
-    candlestick(ax, [q[0] for q in quotes], width=0.005)
-    good_candles = [c[0] for c in quotes if c[1] == 1]
+  #   fig, ax = plt.subplots()
+  #   fig.subplots_adjust(bottom=0.2)
+  #   
+  #   candlestick(ax, [q[0] for q in quotes], width=0.005)
+  #   good_candles = [c[0] for c in quotes if c[1] == 1]
 
-    buy_candles_x = [quotes[i][0][0] for i in range(4, len(quotes)) if predicted[i-4] == 1]
-    buy_candles_y = [quotes[i][0][2] for i in range(4, len(quotes)) if predicted[i-4] == 1]
-    # ax.scatter([p[0] for p in good_candles], [p[2] for p in good_candles], color='g')
-    ax.scatter(buy_candles_x, buy_candles_y, color='y')
-    # ax.scatter([p[0] for p in bad_candles], [p[2] for p in bad_candles], color='y')
+  #   buy_candles_x = [quotes[i][0][0] for i in range(4, len(quotes)) if predicted[i-4] == 1]
+  #   buy_candles_y = [quotes[i][0][2] for i in range(4, len(quotes)) if predicted[i-4] == 1]
+  #   # ax.scatter([p[0] for p in good_candles], [p[2] for p in good_candles], color='g')
+  #   ax.scatter(buy_candles_x, buy_candles_y, color='y')
+  #   # ax.scatter([p[0] for p in bad_candles], [p[2] for p in bad_candles], color='y')
 
-    locator = HourLocator()
-    formatter = DateFormatter('%d/%m %H:%M')
-    ax.xaxis.set_major_locator(locator)
-    ax.xaxis.set_major_formatter(formatter)
-   
-    # circle1 = Ellipse((date2num(datetime.datetime.now() + datetime.timedelta(hours=-5)), 7800), 0.013, 10, color='b')
-    # ax.add_artist(circle1)
-    ax.xaxis_date()
-    # ax.axis('equal')
-    ax.autoscale_view()
-    plt.setp(plt.gca().get_xticklabels(), rotation=45, horizontalalignment='right')
-    fig.savefig('data/graph.png')
-    # plt.show()
-    plt.close()
+  #   locator = HourLocator()
+  #   formatter = DateFormatter('%d/%m %H:%M')
+  #   ax.xaxis.set_major_locator(locator)
+  #   ax.xaxis.set_major_formatter(formatter)
+  #  
+  #   # circle1 = Ellipse((date2num(datetime.datetime.now() + datetime.timedelta(hours=-5)), 7800), 0.013, 10, color='b')
+  #   # ax.add_artist(circle1)
+  #   ax.xaxis_date()
+  #   # ax.axis('equal')
+  #   ax.autoscale_view()
+  #   plt.setp(plt.gca().get_xticklabels(), rotation=45, horizontalalignment='right')
+  #   fig.savefig('data/graph.png')
+  #   # plt.show()
+  #   plt.close()
 
-    return predicted[-1]
+  #   return predicted[-1]
 
-  def create_dataset(self, dataset, window_size=20, distance=4):
-    dataX, dataY = [], []
-    for i in range(len(dataset) - window_size - distance - 1):
-      # a = dataset[i:(i+look_back), 0]
-      a = dataset[i:i + window_size, 0]
-      # a = a.flatten()
-      dataX.append(a)
-      dataY.append(dataset[i + window_size + distance, 0])
-    return numpy.array(dataX), numpy.array(dataY)
+  # def create_dataset(self, dataset, window_size=20, distance=4):
+  #   dataX, dataY = [], []
+  #   for i in range(len(dataset) - window_size - distance - 1):
+  #     # a = dataset[i:(i+look_back), 0]
+  #     a = dataset[i:i + window_size, 0]
+  #     # a = a.flatten()
+  #     dataX.append(a)
+  #     dataY.append(dataset[i + window_size + distance, 0])
+  #   return numpy.array(dataX), numpy.array(dataY)
