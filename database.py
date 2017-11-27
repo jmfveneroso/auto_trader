@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# coding=UTF-8
 
 import os
 import datetime
@@ -7,19 +8,37 @@ import logging
 from multiprocessing.dummy import Process as Thread
 from pymongo import MongoClient
 from poloniex import Poloniex
+from sshtunnel import SSHTunnelForwarder
 
 logger = logging.getLogger(__name__)
 
 class DB:
   timeskip = datetime.timedelta(hours=1)
   lifespan = datetime.timedelta(days=5)
-  candle_span = datetime.timedelta(minutes=10)
+  candle_span = datetime.timedelta(minutes=15)
+  candle_start = datetime.timedelta(hours=12)
 
-  def __init__(self, poloniex):
-    self.client = MongoClient()
+  def __init__(self, poloniex, ssh_forwarding=False):
+    self.ssh_forwarding = ssh_forwarding
+    if ssh_forwarding:
+      self.server = SSHTunnelForwarder(
+        'visconde.latin.dcc.ufmg.br',
+        ssh_username='joao',
+        ssh_pkey="/Users/joaomateusdefreitasveneroso/.ssh/id_rsa",
+        remote_bind_address=('127.0.0.1', 27017)
+      )
+      self.server.start()
+      self.client = MongoClient('127.0.0.1', self.server.local_bind_port) 
+    else:
+      self.client = MongoClient()
+
     self.db = self.client.poloniex
     self.poloniex = poloniex
     self.last_candles = {}
+
+  def close(self):
+    if self.ssh_forwarding:
+      self.server.stop()
 
   def str_to_datetime(self, timestamp):
     return datetime.datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S') 
@@ -108,7 +127,11 @@ class DB:
 
     open_p, close_p, high, low = 0, 0, 0, 0
     current_timestamp = None
-    cursor = collection.find().sort("date", 1)
+
+    threshold = datetime.datetime.now() - DB.candle_start
+    cursor = collection.find({ 'date':{ '$gt': threshold } })
+    # cursor = collection.find().sort("date", 1)
+
     for trade in cursor:
       price = trade['rate']
       candle_time = self.get_next_candle_time(trade['date'])
@@ -118,7 +141,7 @@ class DB:
         close_p = price
       else:
         if current_timestamp != None:
-          candles.append((current_timestamp, open_p, close_p, high, low))
+          candles.append((self.datetime_to_str(current_timestamp), open_p, close_p, high, low))
         open_p, close_p, high, low = price, price, price, price
         current_timestamp = candle_time
 
@@ -132,11 +155,11 @@ class DB:
         close_p = price
       elif candle_time > current_timestamp:
         if current_timestamp != None:
-          candles.append((current_timestamp, open_p, close_p, high, low))
+          candles.append((self.datetime_to_str(current_timestamp), open_p, close_p, high, low))
         open_p, close_p, high, low = price, price, price, price
         current_timestamp = candle_time
 
-    candles.append((current_timestamp, open_p, close_p, high, low))
+    candles.append((self.datetime_to_str(current_timestamp), open_p, close_p, high, low))
     return candles
 
 class Ticker(object):

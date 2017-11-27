@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# coding=UTF-8
 
 import urllib
 import urllib2
@@ -26,14 +27,6 @@ from sklearn.externals import joblib
 from sklearn.model_selection import cross_val_score
 from poloniex import Poloniex
 
-# import numpy
-# import pandas
-# import math
-# from keras.models import Sequential
-# from keras.layers import Dense
-# from keras.layers import LSTM
-# from sklearn.preprocessing import MinMaxScaler
-# from sklearn.metrics import mean_squared_error
 prediction_list = []
  
 predicted = 'do nothing'
@@ -59,17 +52,8 @@ class GetHandler(BaseHTTPRequestHandler):
 
       self.wfile.write(html)
 
-  def log_message(self, format, *args):
-    return
-
-def serve():
-  server = HTTPServer(('localhost', 8080), GetHandler)
-  server.serve_forever()
- 
-p = Poloniex(
-  'GCRWWGGU-SXE53KFV-XEP9MPDZ-9LCDDV4K',
-  '346fb5d4bd593d0a796ca24defa66bb1947da3cab31542048bba751ee700135285e4f3b008fdf830e672137634ccd5742118376cf499b7b5cb25667e564e5cb4'
-)
+  # def log_message(self, format, *args):
+  #   return
 
 def serve():
   server = HTTPServer(('localhost', 8080), GetHandler)
