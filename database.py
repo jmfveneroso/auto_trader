@@ -21,14 +21,15 @@ class DB:
   def __init__(self, poloniex, ssh_forwarding=False):
     self.ssh_forwarding = ssh_forwarding
     if ssh_forwarding:
-      self.server = SSHTunnelForwarder(
-        'visconde.latin.dcc.ufmg.br',
-        ssh_username='joao',
-        ssh_pkey="/Users/joaomateusdefreitasveneroso/.ssh/id_rsa",
-        remote_bind_address=('127.0.0.1', 27017)
-      )
-      self.server.start()
-      self.client = MongoClient('127.0.0.1', self.server.local_bind_port) 
+      # self.server = SSHTunnelForwarder(
+      #   'visconde.latin.dcc.ufmg.br',
+      #   ssh_username='joao',
+      #   ssh_pkey="/Users/joaomateusdefreitasveneroso/.ssh/id_rsa",
+      #   remote_bind_address=('127.0.0.1', 27017)
+      # )
+      # self.server.start()
+      # self.client = MongoClient('mongodb://auto_trader:poloniex@54.167.109.34:27017/')
+      self.client = MongoClient('54.167.109.34')
     else:
       self.client = MongoClient()
 
@@ -160,6 +161,9 @@ class DB:
         { 'candles': candlesticks },
         upsert=True
       )
+
+  def get_all_candles(self):
+    return self.db['candles'].find()
 
   '''
   Update forward all currencies USD tethered.

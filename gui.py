@@ -11,6 +11,7 @@ from BaseHTTPServer import BaseHTTPRequestHandler
 from BaseHTTPServer import HTTPServer
 from poloniex import Poloniex
 from database import DB
+from bson.json_util import dumps
 
 class GetHandler(BaseHTTPRequestHandler):
   def send_file(self, f):
@@ -19,7 +20,7 @@ class GetHandler(BaseHTTPRequestHandler):
     f.close()
 
   def get_update_json(self):
-    return json.dumps(db.get_candlesticks('USDT_BCH'))
+    return dumps(db.get_all_candles())
 
   def do_GET(self):
     self.send_response(200)
