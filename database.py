@@ -178,7 +178,7 @@ class DB:
     self.db['ticker_buffer'].remove({})
 
 class Ticker(object):
-  def __init__(self, db, api, interval=30):
+  def __init__(self, db, api, interval=15):
     self.api = api
     self.db = db
     self.mongo = MongoClient().poloniex
