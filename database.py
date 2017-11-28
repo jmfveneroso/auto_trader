@@ -16,7 +16,7 @@ class DB:
   timeskip = datetime.timedelta(hours=1)
   lifespan = datetime.timedelta(days=5)
   candle_span = datetime.timedelta(minutes=15)
-  candle_start = datetime.timedelta(hours=12)
+  candle_start = datetime.timedelta(days=5)
 
   def __init__(self, poloniex, ssh_forwarding=False):
     self.ssh_forwarding = ssh_forwarding
@@ -178,7 +178,7 @@ class DB:
     self.db['ticker_buffer'].remove({})
 
 class Ticker(object):
-  def __init__(self, db, api, interval=15):
+  def __init__(self, db, api, interval=30):
     self.api = api
     self.db = db
     self.mongo = MongoClient().poloniex
