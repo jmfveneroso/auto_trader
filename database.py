@@ -99,22 +99,6 @@ class DB:
       start += DB.timeskip
     logger.info('Finished updating ' + str(currency_pair))
 
-  '''
-  Update forward all currencies USD tethered.
-  '''
-  def update_all_currencies(self):
-    currencies = [
-     'USDT_BTC', 'USDT_ETH', 'USDT_BCH', 'USDT_LTC', 'USDT_XRP', 'USDT_ZEC', 
-     'USDT_ETC', 'USDT_STR', 'USDT_DASH', 'USDT_NXT', 'USDT_XMR', 'USDT_REP'
-    ]
-
-    for currency_pair in currencies:
-      logger.info('Updating ' + str(currency_pair))
-      self.clean_old_records(currency_pair)
-      self.update_trade_records(currency_pair)
-
-    self.db['ticker_buffer'].remove({})
-
   def get_next_candle_time(self, time):
     next_candle = time.replace(minute=0, second=0)
     while next_candle < time:
@@ -162,8 +146,39 @@ class DB:
     candles.append((self.datetime_to_str(current_timestamp), open_p, close_p, high, low))
     return candles
 
+  def update_candles(self):
+    currencies = [
+     'USDT_BTC', 'USDT_ETH', 'USDT_BCH', 'USDT_LTC', 'USDT_XRP', 'USDT_ZEC', 
+     'USDT_ETC', 'USDT_STR', 'USDT_DASH', 'USDT_NXT', 'USDT_XMR', 'USDT_REP'
+    ]
+
+    for currency_pair in currencies:
+      logger.info('Updating candles for ' + str(currency_pair))
+      candlesticks = self.get_candlesticks(currency_pair)
+      self.mongo['candles'].update_one(
+        {'_id': currency_pair},
+        {'$set': candlesticks},
+        upsert=True
+      )
+
+  '''
+  Update forward all currencies USD tethered.
+  '''
+  def update_all_currencies(self):
+    currencies = [
+     'USDT_BTC', 'USDT_ETH', 'USDT_BCH', 'USDT_LTC', 'USDT_XRP', 'USDT_ZEC', 
+     'USDT_ETC', 'USDT_STR', 'USDT_DASH', 'USDT_NXT', 'USDT_XMR', 'USDT_REP'
+    ]
+
+    for currency_pair in currencies:
+      logger.info('Updating ' + str(currency_pair))
+      self.clean_old_records(currency_pair)
+      self.update_trade_records(currency_pair)
+
+    self.db['ticker_buffer'].remove({})
+
 class Ticker(object):
-  def __init__(self, db, api, interval=10):
+  def __init__(self, db, api, interval=30:
     self.api = api
     self.db = db
     self.mongo = MongoClient().poloniex
@@ -177,6 +192,7 @@ class Ticker(object):
         {'$set': tick[market]},
         upsert=True
       )
+    self.db.update_candles()
      
     tick['time'] = datetime.datetime.now()
     self.mongo['ticker_buffer'].insert_one(tick)
