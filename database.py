@@ -155,9 +155,9 @@ class DB:
     for currency_pair in currencies:
       logger.info('Updating candles for ' + str(currency_pair))
       candlesticks = self.get_candlesticks(currency_pair)
-      self.mongo['candles'].update_one(
+      self.db['candles'].replace_one(
         {'_id': currency_pair},
-        {'$set': candlesticks},
+        { 'candles': candlesticks },
         upsert=True
       )
 
@@ -178,7 +178,7 @@ class DB:
     self.db['ticker_buffer'].remove({})
 
 class Ticker(object):
-  def __init__(self, db, api, interval=30:
+  def __init__(self, db, api, interval=30):
     self.api = api
     self.db = db
     self.mongo = MongoClient().poloniex
