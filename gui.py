@@ -1,71 +1,33 @@
 #!/usr/bin/env python
 # coding=UTF-8
 
-import urllib
-import urllib2
-import json
 import time
 import os
-import threading
-from BaseHTTPServer import BaseHTTPRequestHandler
-from BaseHTTPServer import HTTPServer
 from poloniex import Poloniex
-from database import DB
-from bson.json_util import dumps
+from database_client import DatabaseClient
+from bottle import route, run, template
 
-class GetHandler(BaseHTTPRequestHandler):
-  def send_file(self, f):
-    self.end_headers()
-    self.wfile.write(f.read())
-    f.close()
+poloniex = Poloniex()
+db = DatabaseClient()
 
-  def get_update_json(self):
-    return dumps(db.get_all_candles())
+@route('/update/<timestamp>')
+def update(timestamp):
+  return db.get_candlesticks(timestamp)
 
-  def do_GET(self):
-    self.send_response(200)
+@route('/gui.css')
+def css():
+  f = open("gui/gui.html")
+  return f.read()
 
-    print self.path
-    if self.path.endswith(".css"):
-      f = open('gui/gui.css')
-      self.send_header('Content-type', 'text/css')
-      self.send_file(f)
-    elif self.path.endswith(".js"):
-      f = open('gui/gui.js')
-      self.send_header('Content-type', 'text/javascript')
-      self.send_file(f)
-    elif self.path == '/update.json':
-      self.end_headers()
-      json = self.get_update_json()
-      self.wfile.write(json)
-    else:
-      f = open("gui/gui.html")
-      self.send_header('Content-type', 'text/html')
-      self.send_file(f)
+@route('/gui.js')
+def js():
+  f = open("gui/gui.js")
+  return f.read()
 
-
-  def log_message(self, format, *args):
-    return
-
-def serve():
-  server = HTTPServer(('localhost', 8082), GetHandler)
-  server.serve_forever()
+@route('/')
+def index():
+  f = open("gui/gui.html")
+  return f.read()
 
 if __name__ == "__main__":
-  f = open("key.txt", "r")
-  key, secret = tuple(f.readline().split(','))
-  global poloniex
-  global db
-  poloniex = Poloniex(key, secret)
-  db = DB(poloniex, ssh_forwarding=True)
-
-  serve()
-  t1 = threading.Thread(target=serve)
-  t1.daemon = True
-  t1.start()
- 
-  try: 
-    while True:
-      time.sleep(5)
-  except:
-    db.close()
+  run(host='localhost', port=8080)

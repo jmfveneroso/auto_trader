@@ -23,9 +23,14 @@ def create_timestamp(datestr, format="%Y-%m-%d %H:%M:%S"):
   return time.mktime(time.strptime(datestr, format))
 
 class Poloniex:
-  def __init__(self, APIKey, Secret):
-    self.APIKey = APIKey
-    self.Secret = Secret
+  def __init__(self):
+    if not os.path.isfile("key.txt"):
+      sys.exit('No key.txt file!')
+    
+    f = open("key.txt", "r")
+    key, secret = tuple(f.readline().split(','))
+    self.APIKey = key
+    self.Secret = secret
  
   def post_process(self, before):
     after = before
@@ -70,7 +75,7 @@ class Poloniex:
       return self.post_process(jsonRet)
  
  
-  def returnTicker(self):
+  def return_ticker(self):
     return self.api_query("returnTicker")
  
   def return24Volume(self):
