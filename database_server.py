@@ -33,6 +33,9 @@ class DatabaseServer:
     self.client = MongoClient()
     self.db = self.client.poloniex
 
+  def now (self):
+    return datetime.datetime.now() - datetime.timedelta(hours=2)
+
   def get_candle_time(self, time):
     next_candle = time.replace(minute=0, second=0, microsecond=0)
     while next_candle < time:
@@ -61,7 +64,7 @@ class DatabaseServer:
     for cp in DatabaseServer.currencies:
       cp = cp.lower()
 
-      start = datetime.datetime.now() - DatabaseServer.lifespan
+      start = self.now() - DatabaseServer.lifespan
       candles = list(self.db['candle_cache'].find({ 
         'currency_pair': cp,
         'date': { '$gt': start },
@@ -89,7 +92,7 @@ class DatabaseServer:
       collection = self.db[currency_pair.lower()]
 
       # Remove old records.
-      oldest = datetime.datetime.now() - DatabaseServer.lifespan
+      oldest = self.now() - DatabaseServer.lifespan
       cursor = collection.remove({ 'date':{ '$lt': oldest } })
 
       # Get newest trade record and update from that point onwards.
@@ -119,7 +122,7 @@ class DatabaseServer:
         logger.info('Added ' + str(len(trades)) + ' trades from ' + str(start) + ' to ' + str(end))
         logger.info('Total trade records: ' + str(collection.find().count()))
 
-        if end > datetime.datetime.now():
+        if end > self.now():
           break
 
         time.sleep(5)
@@ -136,7 +139,7 @@ class DatabaseServer:
         upsert=True
       )
     
-    tick['date'] = datetime.datetime.now() 
+    tick['date'] = self.now() 
     self.db['ticker_buffer'].insert_one(tick)
     self.update_candlesticks()
     logger.info('Ticker updated')

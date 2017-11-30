@@ -18,8 +18,8 @@ def datetime_to_str(dt):
 
 class DatabaseClient:
   def __init__(self):
-    # self.client = MongoClient('54.167.109.34')
-    self.client = MongoClient()
+    self.client = MongoClient('184.72.201.187')
+    # self.client = MongoClient()
     self.db = self.client.poloniex
 
   def get_candlesticks(self, after=None):
