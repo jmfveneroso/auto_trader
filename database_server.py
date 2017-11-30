@@ -139,7 +139,7 @@ class DatabaseServer:
         upsert=True
       )
     
-    tick['date'] = self.now() 
+    tick['date'] = self.now() - datetime.timedelta(hours=2) 
     self.db['ticker_buffer'].insert_one(tick)
     self.update_candlesticks()
     logger.info('Ticker updated')

@@ -106,7 +106,7 @@ function draw_scale(ctx, min, max, min_date, max_date, candles) {
 function plot_candlesticks(new_candles, currency) {
   var c = document.getElementById(currency);
   var ctx = c.getContext("2d");
-  ctx.clearRect(0, 0 , 800, 600);
+  ctx.clearRect(0, 0 , 1200, 600);
 
   currency_candles = []
   for (var i = 0; i < new_candles.length; i++) {
@@ -130,6 +130,7 @@ function plot_candlesticks(new_candles, currency) {
   }
 
   data = candles[currency]
+  console.log(data);
  
   min = 99999999.0
   max = 0.0
@@ -160,10 +161,7 @@ function plot_candlesticks(new_candles, currency) {
   }
 
   remaining = (30 - (i % 30));
-  console.log(i);
   i = i + remaining;
-  console.log(last_date);
-  console.log(remaining);
   last_date = new Date(last_date.getTime() + 15 * 60 * 1000 * remaining);
   draw_date_scale(ctx, i, candle_size, skip_size, last_date);
 
@@ -178,7 +176,8 @@ function update_plots() {
 function update_candlesticks() {
   $.get("/update/" + date_to_str(last_update)).done(function (data) {
     // Have to add 2 hours because of time zones.
-    last_update = new Date((new Date()).getTime() + 2 * 60 * 60 * 1000);
+    // last_update = new Date((new Date()).getTime() + 2 * 60 * 60 * 1000);
+    last_update = new Date()
 
     new_candles = JSON.parse(data);
     new_candles = new_candles.sort(function (x, y) {
