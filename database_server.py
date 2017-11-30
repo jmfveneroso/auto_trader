@@ -16,7 +16,7 @@ class DatabaseServer:
   timeskip = datetime.timedelta(hours=1)
 
   # The amount of trade history we are storing.
-  lifespan = datetime.timedelta(hours=2)
+  lifespan = datetime.timedelta(days=5)
 
   # The candle size.
   candle_span = datetime.timedelta(minutes=15)
@@ -40,6 +40,7 @@ class DatabaseServer:
     return next_candle
 
   def add_to_candle(self, candles, currency_pair, date, price, volume, temp):
+    price = float(price)
     candle_time = self.get_candle_time(date)
     if len(candles) == 0 or candle_time > candles[-1]['date']:
       candles.append({
@@ -48,45 +49,38 @@ class DatabaseServer:
         'temp': temp, 'currency_pair': currency_pair.lower()
       })
     elif candle_time == candles[-1]['date']:
-      if price < candles[-1]['min']: candles[-1]['min'] = price
-      if price > candles[-1]['max']: candles[-1]['max'] = price
+      if price < float(candles[-1]['min']): candles[-1]['min'] = price
+      if price > float(candles[-1]['max']): candles[-1]['max'] = price
       candles[-1]['close'] = price
       candles[-1]['volume'] += float(volume)
+      candles[-1]['temp'] = temp
     else:
-      print candles
-      print date, candle_time, price, volume, temp
       assert False
 
   def update_candlesticks(self):
     for cp in DatabaseServer.currencies:
       cp = cp.lower()
-      candles = list(self.db['candle_cache'].find({ 
-        'currency_pair': cp
-      }).sort('date', 1))
 
+      start = datetime.datetime.now() - DatabaseServer.lifespan
+      candles = list(self.db['candle_cache'].find({ 
+        'currency_pair': cp,
+        'date': { '$gt': start },
+        'temp': 0
+      }).sort('date', 1))
       self.db['candle_cache'].remove({ 'currency_pair': cp })
 
-      start= datetime.datetime.now() - DatabaseServer.lifespan
       if len(candles) > 0:
-        has_temp = False
-        for c in candles:
-          if c['temp']:
-            start = c['date']
-            has_temp = True
-            break
-
-        if has_temp:
-          candles = [c for c in candles if not c['temp']]
-        else:
-          start = candles[-1]['date']
+        start = candles[-1]['date']
        
       trades = self.db[cp].find({ 'date': { '$gt': start } }).sort("date", 1)
       for t in trades:
-        self.add_to_candle(candles, cp, t['date'], t['rate'], t['amount'], False)
+        self.add_to_candle(candles, cp, t['date'], t['rate'], t['amount'], 0)
+      candles[-1]['temp'] = True
 
-      ticks = self.db['ticker_buffer'].find().sort("time", 1)
+      # ticks = self.db['ticker_buffer'].find().sort("date", 1)
+      ticks = self.db['ticker_buffer'].find({ 'date': { '$gt': start } }).sort("date", 1)
       for t in ticks:
-        self.add_to_candle(candles, cp, t['date'], t[cp.upper()]['last'], 0, True)
+        self.add_to_candle(candles, cp, t['date'], t[cp.upper()]['last'], 0, 1)
 
       ticks = self.db['candle_cache'].insert(candles)
      
@@ -165,17 +159,15 @@ class DatabaseServer:
       counter += 1
 
   def start(self):
-    self.thread_1 = Thread(target=self.auto_update)
-    self.thread_1.daemon = True
-    self.thread_1.start()
+    self.thread = Thread(target=self.auto_update)
+    self.thread.daemon = True
+    self.thread.start()
     logger.info('Updater started')
 
   def stop(self):
     self.running = False
-    self.thread_1.join()
+    self.thread.join()
     logger.info('Updater stopped')
-    self.thread_2.join()
-    logger.info('Ticker stopped')
 
 if __name__ == "__main__":
   logging.basicConfig(level=logging.INFO)

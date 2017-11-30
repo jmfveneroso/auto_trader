@@ -16,7 +16,7 @@ def update(timestamp):
 
 @route('/gui.css')
 def css():
-  f = open("gui/gui.html")
+  f = open("gui/gui.css")
   return f.read()
 
 @route('/gui.js')
@@ -30,4 +30,4 @@ def index():
   return f.read()
 
 if __name__ == "__main__":
-  run(host='localhost', port=8080)
+  run(host='localhost', port=8082)
