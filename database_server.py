@@ -34,7 +34,7 @@ class DatabaseServer:
     self.db = self.client.poloniex
 
   def now (self):
-    return datetime.datetime.now() - datetime.timedelta(hours=2)
+    return datetime.datetime.now()
 
   def get_candle_time(self, time):
     next_candle = time.replace(minute=0, second=0, microsecond=0)
