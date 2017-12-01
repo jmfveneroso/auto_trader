@@ -130,7 +130,6 @@ function plot_candlesticks(new_candles, currency) {
   }
 
   data = candles[currency]
-  console.log(data);
  
   min = 99999999.0
   max = 0.0
@@ -162,7 +161,7 @@ function plot_candlesticks(new_candles, currency) {
 
   remaining = (30 - (i % 30));
   i = i + remaining;
-  last_date = new Date(last_date.getTime() + 15 * 60 * 1000 * remaining);
+  last_date = new Date(last_date.getTime() + 15 * 60 * 1000 * (remaining + 1));
   draw_date_scale(ctx, i, candle_size, skip_size, last_date);
 
 }
@@ -187,9 +186,8 @@ function update_candlesticks() {
     if (new_candles.length == 0) return;
 
     currencies = [
-    //   "btc", "eth", "bch", "ltc", "xrp", "zec", 
-    //   "etc", "str", "dash", "nxt", "xmr", "rep"
-    "btc"
+      "btc", "eth", "bch", "ltc", "xrp", "zec", 
+      "etc", "str", "dash", "nxt", "xmr", "rep"
     ];
 
     for (var i = 0; i < currencies.length; i++) {

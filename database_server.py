@@ -154,10 +154,13 @@ class DatabaseServer:
     counter = 0
     self.running = True
     while self.running:
-      if counter % 30 == 0:
-        self.update_trade_records()
-      else:
-        self.update_ticker()
+      try:
+        if counter % 30 == 0:
+          self.update_trade_records()
+        else:
+          self.update_ticker()
+      except:
+        logger.error('Exception during main loop.')
       time.sleep(10)
       counter += 1
 
