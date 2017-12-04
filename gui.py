@@ -10,9 +10,17 @@ from bottle import route, run, template
 poloniex = Poloniex()
 db = DatabaseClient()
 
-@route('/update/<timestamp>')
-def update(timestamp):
-  return db.get_candlesticks(timestamp)
+@route('/force_buy/<currency>')
+def update(currency):
+  return db.force(currency, 'Buy')
+
+@route('/force_sell/<currency>')
+def update(currency):
+  return db.force(currency, 'Sell')
+
+@route('/update.json')
+def update():
+  return db.get_candlesticks()
 
 @route('/gui.css')
 def css():
@@ -30,4 +38,6 @@ def index():
   return f.read()
 
 if __name__ == "__main__":
+  db.start()
   run(host='localhost', port=8082)
+  db.stop()

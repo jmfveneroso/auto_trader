@@ -1,7 +1,122 @@
+body {
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+  background-size: 150px 150px;
+  background-image: url("http://www.commentnation.com/hotlinks/diagonal_pin_stripes_background_gray_on_white.gif");
+}
+
 #man {
   font-size: 22px;
 }
 
+.title {
+  width: 100%;
+  background: #eee;
+  color: #0c6;
+  padding: 8px 14px;
+  text-transform: uppercase;
+  border-top: 1px solid #fff;
+  border-bottom: 1px solid #ccc;
+  font-size: 16px;
+  /*text-shadow: 0px 1px 1px #ccc; */
+}
+
 canvas {
-  border: 1px solid black;
+  display: block;
+  margin: 0 auto;
+  margin-top: 25px;
+  border: 1px solid #eee;
+  background: white;
+  box-shadow: 0px 1px 1px #ccc;
+}
+
+.tools {
+  display: block;
+  width: 225px;
+  margin: 0 auto;
+  margin-top: 10px;
+}
+
+.btn {
+  display: inline-block;
+  background: #aaa;
+  border: 1px solid #ccc;
+  padding: 8px 14px;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #eee;
+  text-shadow: 1px 1px 0 rgba(100,100,100,0.6);
+  /* text-shadow: 1px 1px 0 rgba(100,100,100,0.6), -1px -1px 1px rgba(0,0,0,0.6) ; */
+  text-transform: uppercase;
+  border-top: 1px solid #eee;
+  border-bottom: 2px solid #777;
+  border-right: 2px solid #777;
+  cursor: pointer;
+}
+
+.buy {
+  background: #2c2;
+  border-bottom: 2px solid #696;
+  border-right: 2px solid #696;
+}
+
+.sell {
+  background: #a00;
+  border-bottom: 2px solid #966;
+  border-right: 2px solid #966;
+}
+
+.container {
+  background: #eee;
+  border-top: 1px solid #fff;
+  border-bottom: 1px solid #ccc;
+  padding: 15px 50px;
+  color: #999;
+  font-size: 14px;
+  margin-top: 25px;
+}
+
+.info {
+  margin-bottom: 4px;
+  text-shadow: 1px 1px 0 rgba(255,255,255,0.6);
+  color: #999;
+}
+
+.value {
+  color: #7c7;
+}
+
+table {
+  width: 100%;
+  font-size: 12px;
+  border: 1px solid #ccc;
+  background: white;
+  border-collapse: collapse;
+}
+
+tr {
+  width: 100%;
+  text-align: left;
+}
+
+table tr:nth-child(odd){ 
+  background: #eef;
+}
+
+table tr:nth-child(even){
+  background: #fff;
+}
+
+td, th {
+  font-weight: normal;
+  padding: 5px 10px;
+}
+
+thead {
+  border-bottom: 1px solid #ccc;
+}
+
+.table-title th {
+  background: #ccf;
 }

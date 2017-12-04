@@ -6,30 +6,297 @@
   </head>
   <body>
     <div id="man">
-      <p>Bitcoin (BTC)</p>
-      <canvas id="btc" width="1200" height="600"></canvas>
-      <p>Ethereum (ETH)</p>
-      <canvas id="eth" width="1200" height="600"></canvas>
-      <p>Bitcoin Cash (BCH)</p>
-      <canvas id="bch" width="1200" height="600"></canvas>
-      <p>Litecoin (LTC)</p>
-      <canvas id="ltc" width="1200" height="600"></canvas>
-      <p>Ripple (XRP)</p>
-      <canvas id="xrp" width="1200" height="600"></canvas>
-      <p>Z-Cash (ZEC)</p>
-      <canvas id="zec" width="1200" height="600"></canvas>
-      <p>Ethereum Classic (ETC)</p>
-      <canvas id="etc" width="1200" height="600"></canvas>
-      <p>Stellar (STR)</p>
-      <canvas id="str" width="1200" height="600"></canvas>
-      <p>Dash (DASH)</p>
-      <canvas id="dash" width="2000" height="600"></canvas>
-      <p>NXT (NXT)</p>
-      <canvas id="nxt" width="1200" height="600"></canvas>
+      <div id="btc_panel">
+        <div class="title">Bitcoin (BTC) - <span id="candle_end">15:00</span></div>
+        <canvas id="btc" width="1135" height="505"></canvas>
+        <div class="tools">
+          <div id="btc_buy" class="btn buy">Buy</div>  
+          <div id="btc_sell" class="btn sell">Sell</div>  
+          <div id="btc_enable" class="btn enable">Enable</div>  
+        </div>
+
+        <div class="container">
+          <div style="margin: 0 auto; width: 1135;">
+            <div style="display: inline-block; float: left;">
+              <div class="info">Status:     <span id="btc_status" class="value">Buy</span></div>  
+              <div class="info">Balance:    <span id="btc_balance" class="value">$9</span></div>  
+              <div class="info">Stop Gain:  <span id="btc_stop_gain" class="value">0.0001</span></div>  
+              <div class="info">Stop Loss:  <span id="btc_stop_loss" class="value">0.0003</span></div>  
+              <div class="info">Prediction: <span id="btc_prediction" class="value">Buy</span></div>  
+              <div class="info">Accuracy:   <span id="btc_accuracy" class="value">50%</span></div>  
+              <div class="info">Highest Bid: <span id="btc_highest_bid" class="value">Buy</span></div>  
+              <div class="info">Lowest Ask: <span id="btc_lowest_ask" class="value">Buy</span></div>  
+              <div class="info">Last Price: <span id="btc_last_price" class="value">Buy</span></div>  
+            </div>
+            <div style="display: inline-block; width: 50%">
+              <div style="height: 200px; overflow: scroll; margin-left: 50px; width: 750px;">
+                <table>
+                  <thead>
+                    <tr class="table-title">
+                      <th>Date</th>
+                      <th>Order</th>
+                      <th>Price</th> 
+                      <th>Volume</th>
+                      <th>Tax</th>
+                      <th>Gain / Loss</th>
+                      <th>Balance</th>
+                    </tr>
+                  </thead>
+                  <tbody id="btc_order_table">
+                    <tr><td>2000</td><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>2000</td><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>2000</td><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>2000</td><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>2000</td><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>2000</td><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>2000</td><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>2000</td><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>2000</td><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>2000</td><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <div id="eth_panel">
+        <div class="title">Ethereum (ETH)</div>
+        <canvas id="eth" width="1135" height="505"></canvas>
+        <div class="tools">
+          <div id="eth_buy" class="btn buy">Buy</div>  
+          <div id="eth_sell" class="btn sell">Sell</div>  
+          <div id="eth_enable" class="btn enable">Enable</div>  
+        </div>
+
+        <div class="container">
+          <div style="margin: 0 auto; width: 1135;">
+            <div style="display: inline-block; float: left;">
+              <div class="info">Status:     <span id="eth_status" class="value">Buy</span></div>  
+              <div class="info">Balance:    <span id="eth_balance" class="value">$9</span></div>  
+              <div class="info">Stop Gain:  <span id="eth_stop_gain" class="value">0.0001</span></div>  
+              <div class="info">Stop Loss:  <span id="eth_stop_loss" class="value">0.0003</span></div>  
+              <div class="info">Prediction: <span id="eth_prediction" class="value">Buy</span></div>  
+              <div class="info">Accuracy:   <span id="eth_accuracy" class="value">50%</span></div>  
+              <div class="info">Highest Bid: <span id="eth_highest_bid" class="value">Buy</span></div>  
+              <div class="info">Lowest Ask: <span id="eth_lowest_ask" class="value">Buy</span></div>  
+              <div class="info">Last Price: <span id="eth_last_price" class="value">Buy</span></div>  
+            </div>
+            <div style="display: inline-block; width: 50%">
+              <div style="height: 200px; overflow: scroll; margin-left: 50px; width: 750px;">
+                <table>
+                  <thead>
+                    <tr class="table-title">
+                      <th>Order</th>
+                      <th>Price</th> 
+                      <th>Volume</th>
+                      <th>Tax</th>
+                      <th>Gain / Loss</th>
+                      <th>Balance</th>
+                    </tr>
+                  </thead>
+                  <tbody id="eth_order_table">
+                    <tr><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <div id="xrp_panel">
+        <div class="title">Ripple (xrp)</div>
+        <canvas id="xrp" width="1135" height="505"></canvas>
+        <div class="tools">
+          <div id="xrp_buy" class="btn buy">Buy</div>  
+          <div id="xrp_sell" class="btn sell">Sell</div>  
+          <div id="xrp_enable" class="btn enable">Enable</div>  
+        </div>
+
+        <div class="container">
+          <div style="margin: 0 auto; width: 1135;">
+            <div style="display: inline-block; float: left;">
+              <div class="info">Status:     <span id="xrp_status" class="value">Buy</span></div>  
+              <div class="info">Balance:    <span id="xrp_balance" class="value">$9</span></div>  
+              <div class="info">Stop Gain:  <span id="xrp_stop_gain" class="value">0.0001</span></div>  
+              <div class="info">Stop Loss:  <span id="xrp_stop_loss" class="value">0.0003</span></div>  
+              <div class="info">Prediction: <span id="xrp_prediction" class="value">Buy</span></div>  
+              <div class="info">Accuracy:   <span id="xrp_accuracy" class="value">50%</span></div>  
+              <div class="info">Highest Bid: <span id="xrp_highest_bid" class="value">Buy</span></div>  
+              <div class="info">Lowest Ask: <span id="xrp_lowest_ask" class="value">Buy</span></div>  
+              <div class="info">Last Price: <span id="xrp_last_price" class="value">Buy</span></div>  
+            </div>
+            <div style="display: inline-block; width: 50%">
+              <div style="height: 200px; overflow: scroll; margin-left: 50px; width: 750px;">
+                <table>
+                  <thead>
+                    <tr class="table-title">
+                      <th>Order</th>
+                      <th>Price</th> 
+                      <th>Volume</th>
+                      <th>Tax</th>
+                      <th>Gain / Loss</th>
+                      <th>Balance</th>
+                    </tr>
+                  </thead>
+                  <tbody id="xrp_order_table">
+                    <tr><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <div id="zec_panel">
+        <div class="title">ZCash (zec)</div>
+        <canvas id="zec" width="1135" height="505"></canvas>
+        <div class="tools">
+          <div id="zec_buy" class="btn buy">Buy</div>  
+          <div id="zec_sell" class="btn sell">Sell</div>  
+          <div id="zec_enable" class="btn enable">Enable</div>  
+        </div>
+
+        <div class="container">
+          <div style="margin: 0 auto; width: 1135;">
+            <div style="display: inline-block; float: left;">
+              <div class="info">Status:     <span id="zec_status" class="value">Buy</span></div>  
+              <div class="info">Balance:    <span id="zec_balance" class="value">$9</span></div>  
+              <div class="info">Stop Gain:  <span id="zec_stop_gain" class="value">0.0001</span></div>  
+              <div class="info">Stop Loss:  <span id="zec_stop_loss" class="value">0.0003</span></div>  
+              <div class="info">Prediction: <span id="zec_prediction" class="value">Buy</span></div>  
+              <div class="info">Accuracy:   <span id="zec_accuracy" class="value">50%</span></div>  
+              <div class="info">Highest Bid: <span id="zec_highest_bid" class="value">Buy</span></div>  
+              <div class="info">Lowest Ask: <span id="zec_lowest_ask" class="value">Buy</span></div>  
+              <div class="info">Last Price: <span id="zec_last_price" class="value">Buy</span></div>  
+            </div>
+            <div style="display: inline-block; width: 50%">
+              <div style="height: 200px; overflow: scroll; margin-left: 50px; width: 750px;">
+                <table>
+                  <thead>
+                    <tr class="table-title">
+                      <th>Date</th>
+                      <th>Order</th>
+                      <th>Price</th> 
+                      <th>Volume</th>
+                      <th>Tax</th>
+                      <th>Gain / Loss</th>
+                      <th>Balance</th>
+                    </tr>
+                  </thead>
+                  <tbody id="zec_order_table">
+                    <tr><td>2000-10-10</td><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>2000-10-10</td><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>2000-10-10</td><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>2000-10-10</td><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>2000-10-10</td><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>2000-10-10</td><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>2000-10-10</td><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>2000-10-10</td><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>2000-10-10</td><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>2000-10-10</td><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <div id="dash_panel">
+        <div class="title">Dash (dash)</div>
+        <canvas id="dash" width="1135" height="505"></canvas>
+        <div class="tools">
+          <div id="dash_buy" class="btn buy">Buy</div>  
+          <div id="dash_sell" class="btn sell">Sell</div>  
+          <div id="dash_enable" class="btn enable">Enable</div>  
+        </div>
+
+        <div class="container">
+          <div style="margin: 0 auto; width: 1135;">
+            <div style="display: inline-block; float: left;">
+              <div class="info">Status:     <span id="dash_status" class="value">Buy</span></div>  
+              <div class="info">Balance:    <span id="dash_balance" class="value">$9</span></div>  
+              <div class="info">Stop Gain:  <span id="dash_stop_gain" class="value">0.0001</span></div>  
+              <div class="info">Stop Loss:  <span id="dash_stop_loss" class="value">0.0003</span></div>  
+              <div class="info">Prediction: <span id="dash_prediction" class="value">Buy</span></div>  
+              <div class="info">Accuracy:   <span id="dash_accuracy" class="value">50%</span></div>  
+              <div class="info">Highest Bid: <span id="dash_highest_bid" class="value">Buy</span></div>  
+              <div class="info">Lowest Ask: <span id="dash_lowest_ask" class="value">Buy</span></div>  
+              <div class="info">Last Price: <span id="dash_last_price" class="value">Buy</span></div>  
+            </div>
+            <div style="display: inline-block; width: 50%">
+              <div style="height: 200px; overflow: scroll; margin-left: 50px; width: 750px;">
+                <table>
+                  <thead>
+                    <tr class="table-title">
+                      <th>Order</th>
+                      <th>Price</th> 
+                      <th>Volume</th>
+                      <th>Tax</th>
+                      <th>Gain / Loss</th>
+                      <th>Balance</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dash_order_table">
+                    <tr><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                    <tr><td>Buy</td><td>10.54</td><td>100.33</td><td>1.54</td><td>-50.00</td><td>1000.00</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <!--<p>Bitcoin Cash (BCH)</p>
+      <canvas id="bch" width="1135" height="505"></canvas>-->
+      <!--<p>Litecoin (LTC)</p>
+      <canvas id="ltc" width="1135" height="505"></canvas>-->
+      <!--<p>Ethereum Classic (ETC)</p>
+      <canvas id="etc" width="1135" height="505"></canvas>-->
+      <!--<p>Stellar (STR)</p>
+      <canvas id="str" width="1135" height="505"></canvas>-->
+      <!--<p>NXT (NXT)</p>
+      <canvas id="nxt" width="1135" height="505"></canvas>
       <p>Monero (XMR)</p>
-      <canvas id="xmr" width="1200" height="600"></canvas>
+      <canvas id="xmr" width="1135" height="505"></canvas>
       <p>Augur (REP)</p>
-      <canvas id="rep" width="1200" height="600"></canvas>
+      <canvas id="rep" width="1135" height="505"></canvas>-->
     </div>
   </body>
 </html>

@@ -2,11 +2,76 @@
 
 width = 1000;
 height = 400;
-margin_x = 68;
-margin_y = 80;
+margin_x = 38;
+margin_y = 34
 
-last_update = new Date('1970-01-01 00:00:00')
 candles = {}
+states = {}
+
+currencies = [
+  // "btc", "eth", "bch", "ltc", "xrp", "zec", 
+  // "etc", "str", "dash", "nxt", "xmr", "rep"
+  'btc', 'zec', 'xrp', 'dash', 'eth'
+];
+
+function buy(event) {
+  id = event.target.id;
+  currency = id.substr(0, id.length - 4);
+  $.get("/force_buy/usdt_" + currency);
+}
+
+function sell(event) {
+  id = event.target.id;
+  currency = id.substr(0, id.length - 4);
+  $.get("/force_buy/usdt_" + currency);
+}
+
+function to_percentage(num) {
+  return parseFloat(num * 100).toFixed(2)
+}
+
+function update_trades(currency, trades) {
+  if (trades == undefined) return;
+
+  $('#' + currency + '_order_table').html('');
+
+  html = '';
+  for (var i = 0; i < trades.length; i++) {
+    t = trades[i];
+    html += '<tr><td>' + t['date']  + '</td><td>' + t['type']   + '</td><td>'
+                       + t['price'] + '</td><td>' + t['volume'] + '</td><td>'
+                       + t['tax']   + '</td><td>' + 0   + '</td><td>'
+                       + t['balance']   + '</td>';
+  }
+  $('#' + currency + '_order_table').html(html);
+}
+
+function update_info(data) {
+  console.log(data['state']);
+  states = data['state'];
+  $('#candle_end').text(data['time_to_candle_end']);
+
+  for (var i = 0; i < currencies.length; i++) {
+    state = states['usdt_' + currencies[i]];
+    $('#' + currencies[i] + '_accuracy').text(
+      to_percentage(state['accuracy']) + 
+      '% (' + to_percentage(state['std_deviation']) + '%)'
+    );
+
+    $('#' + currencies[i] + '_status').text(state['status']);
+    $('#' + currencies[i] + '_prediction').text(state['prediction']);
+    $('#' + currencies[i] + '_highest_bid').text(state['highest_bid']);
+    $('#' + currencies[i] + '_lowest_ask').text(state['lowest_ask']);
+    $('#' + currencies[i] + '_last_price').text(state['last_price']);
+    $('#' + currencies[i] + '_balance').text(state['balance']);
+    $('#' + currencies[i] + '_stop_gain').text(state['stop_gain']);
+    $('#' + currencies[i] + '_stop_loss').text(state['stop_loss']);
+
+    $('#' + currencies[i] + '_buy').click(buy);
+    $('#' + currencies[i] + '_sell').click(sell);
+    update_trades(currencies[i], state['trades']);
+  }
+}
 
 function date_to_str(d) {
   function two(num) {
@@ -50,14 +115,25 @@ function draw_date_scale(ctx, x, candle_size, skip_size, date) {
   ctx.stroke();
 }
 
-function draw_candle(ctx, x, open, close, candle_size, skip_size) {
+function draw_candle(ctx, x, open, close, candle_size, skip_size, buy, prediction, candle) {
   length = Math.abs(open - close);
   if (length < 2) length = 2;
   y = (open > close) ? open : close;
 
   ctx.beginPath();
 
-  if (open < close)
+  if (buy == '1' && prediction == '1')
+    ctx.fillStyle = "#0000FF";
+  else if (buy == '1')
+    ctx.fillStyle = "#00FFFF";
+  else if (prediction == '1')
+    ctx.fillStyle = "#000000";
+
+  // if (candle['support'])
+  //   ctx.fillStyle = "#0000FF";
+  // else if (candle['resistance'])
+  //   ctx.fillStyle = "#000000";
+  else if (open < close)
     ctx.fillStyle = "#00FF00";
   else 
     ctx.fillStyle = "#FF0000";
@@ -108,28 +184,7 @@ function plot_candlesticks(new_candles, currency) {
   var ctx = c.getContext("2d");
   ctx.clearRect(0, 0 , 1200, 600);
 
-  currency_candles = []
-  for (var i = 0; i < new_candles.length; i++) {
-    if (new_candles[i]['currency_pair'] == 'usdt_' + currency) 
-      currency_candles.push(new_candles[i])
-  }
-
-  if (candles[currency] === undefined) {
-    candles[currency] = currency_candles;
-  } else {
-    last_candle = candles[currency][candles[currency].length - 1];
-    last_candle_date = (new Date(last_candle['date'])).getTime();
-    cmp = (new Date(currency_candles[0]['date']).getTime()) - last_candle_date
-
-    if (cmp == 0) {
-      candles[currency][candles[currency].length - 1] = currency_candles[0];
-    } else if (cmp > 0) {
-      candles[currency].shift();
-      candles[currency].push(currency_candles[0]);
-    }
-  }
-
-  data = candles[currency]
+  data = new_candles['usdt_' + currency]
  
   min = 99999999.0
   max = 0.0
@@ -153,7 +208,7 @@ function plot_candlesticks(new_candles, currency) {
   for (; i < data.length; i++) {
     open  = ((parseFloat(data[i]['open']) - min) / (max - min)) * height 
     close = ((parseFloat(data[i]['close']) - min) / (max - min)) * height 
-    draw_candle(ctx, i, open, close, candle_size, skip_size);
+    draw_candle(ctx, i, open, close, candle_size, skip_size, data[i]['buy'], data[i]['prediction'], data[i]);
     if (i % 30 == 0)
       draw_date_scale(ctx, i, candle_size, skip_size, new Date(data[i]['date']));
     last_date = new Date(data[i]['date']);
@@ -164,35 +219,47 @@ function plot_candlesticks(new_candles, currency) {
   last_date = new Date(last_date.getTime() + 15 * 60 * 1000 * (remaining + 1));
   draw_date_scale(ctx, i, candle_size, skip_size, last_date);
 
-}
+  // Draw stop gain and loss.
+  if (states['usdt_' + currency]) {
+    if (states['usdt_' + currency]['stop_loss']) {
+      ctx.beginPath();
+      stop_loss = states['usdt_' + currency]['stop_loss'];
 
-function update_plots() {
-  for (var i = 0; i < currencies.length; i++) {
-    plot_candlesticks(candles, currencies[i]);
+      ctx.strokeStyle = "#aa0000";
+      ctx.lineWidth = 1;
+
+      y = ((stop_loss - min) / (max - min)) * height
+      ctx.moveTo(margin_x - 10, height + margin_y - y);
+      ctx.lineTo(margin_x + width + 10, height + margin_y - y);
+      ctx.stroke();
+      ctx.closePath();
+    }
+
+    if (states['usdt_' + currency]['stop_gain']) {
+      ctx.beginPath();
+      stop_loss = states['usdt_' + currency]['stop_gain'];
+
+      ctx.strokeStyle = "#00aa00";
+      ctx.lineWidth = 1;
+
+      y = ((stop_loss - min) / (max - min)) * height
+      ctx.moveTo(margin_x - 10, height + margin_y - y);
+      ctx.lineTo(margin_x + width + 10, height + margin_y - y);
+      ctx.stroke();
+      ctx.closePath();
+    }
   }
 }
 
 function update_candlesticks() {
-  $.get("/update/" + date_to_str(last_update)).done(function (data) {
-    // Have to add 2 hours because of time zones.
-    // last_update = new Date((new Date()).getTime() + 2 * 60 * 60 * 1000);
-    last_update = new Date()
-
-    new_candles = JSON.parse(data);
-    new_candles = new_candles.sort(function (x, y) {
-      return (new Date(x['date']).getTime()) - (new Date(y['date'])).getTime();
-    });
-
+  $.get("/update.json").done(function (data) {
+    data = JSON.parse(data);
+    update_info(data);
+    new_candles = data['candles'];
     if (new_candles.length == 0) return;
 
-    currencies = [
-      "btc", "eth", "bch", "ltc", "xrp", "zec", 
-      "etc", "str", "dash", "nxt", "xmr", "rep"
-    ];
-
-    for (var i = 0; i < currencies.length; i++) {
+    for (var i = 0; i < currencies.length; i++)
       plot_candlesticks(new_candles, currencies[i]);
-    }
   });
 }
 
