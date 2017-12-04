@@ -93,6 +93,7 @@ table {
   border: 1px solid #ccc;
   background: white;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 tr {

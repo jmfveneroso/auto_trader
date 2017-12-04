@@ -22,34 +22,41 @@ function buy(event) {
 
 function sell(event) {
   id = event.target.id;
-  currency = id.substr(0, id.length - 4);
-  $.get("/force_buy/usdt_" + currency);
+  currency = id.substr(0, id.length - 5);
+  $.get("/force_sell/usdt_" + currency);
+}
+
+function clear(event) {
+  id = event.target.id;
+  currency = id.substr(0, id.length - 6);
+  $.get("/clear/usdt_" + currency);
 }
 
 function to_percentage(num) {
   return parseFloat(num * 100).toFixed(2)
 }
 
+function crop_num(num) {
+  return parseFloat(num).toFixed(4)
+}
+
 function update_trades(currency, trades) {
+  $('#' + currency + '_order_table').html('');
   if (trades == undefined) return;
 
-  $('#' + currency + '_order_table').html('');
-
   html = '';
+  trades.reverse();
   for (var i = 0; i < trades.length; i++) {
     t = trades[i];
     html += '<tr><td>' + t['date']  + '</td><td>' + t['type']   + '</td><td>'
-                       + t['price'] + '</td><td>' + t['volume'] + '</td><td>'
-                       + t['tax']   + '</td><td>' + 0   + '</td><td>'
-                       + t['balance']   + '</td>';
+                       + crop_num(t['price']) + '</td><td>' + crop_num(t['volume']) + '</td><td>'
+                       + crop_num(t['tax'])   + '</td><td>' + crop_num(t['balance'])   + '</td>';
   }
   $('#' + currency + '_order_table').html(html);
 }
 
 function update_info(data) {
-  console.log(data['state']);
   states = data['state'];
-  $('#candle_end').text(data['time_to_candle_end']);
 
   for (var i = 0; i < currencies.length; i++) {
     state = states['usdt_' + currencies[i]];
@@ -58,17 +65,19 @@ function update_info(data) {
       '% (' + to_percentage(state['std_deviation']) + '%)'
     );
 
-    $('#' + currencies[i] + '_status').text(state['status']);
-    $('#' + currencies[i] + '_prediction').text(state['prediction']);
-    $('#' + currencies[i] + '_highest_bid').text(state['highest_bid']);
-    $('#' + currencies[i] + '_lowest_ask').text(state['lowest_ask']);
-    $('#' + currencies[i] + '_last_price').text(state['last_price']);
-    $('#' + currencies[i] + '_balance').text(state['balance']);
-    $('#' + currencies[i] + '_stop_gain').text(state['stop_gain']);
-    $('#' + currencies[i] + '_stop_loss').text(state['stop_loss']);
+    $('#' + currencies[i] + '_status'     ).text(state['status']               );
+    $('#' + currencies[i] + '_prediction' ).text(state['prediction']           );
+    $('#' + currencies[i] + '_highest_bid').text(crop_num(state['highest_bid']));
+    $('#' + currencies[i] + '_lowest_ask' ).text(crop_num(state['lowest_ask'] ));
+    $('#' + currencies[i] + '_last_price' ).text(crop_num(state['last_price'] ));
+    $('#' + currencies[i] + '_balance'    ).text(crop_num(state['balance']    ));
+    $('#' + currencies[i] + '_invested'   ).text(crop_num(state['invested']   ));
+    $('#' + currencies[i] + '_stop_gain'  ).text(crop_num(state['stop_gain']  ));
+    $('#' + currencies[i] + '_stop_loss'  ).text(crop_num(state['stop_loss']  ));
 
-    $('#' + currencies[i] + '_buy').click(buy);
-    $('#' + currencies[i] + '_sell').click(sell);
+    $('#' + currencies[i] + '_buy').unbind().click(buy);
+    $('#' + currencies[i] + '_sell').unbind().click(sell);
+    $('#' + currencies[i] + '_clear').unbind().click(clear);
     update_trades(currencies[i], state['trades']);
   }
 }
@@ -179,6 +188,26 @@ function draw_scale(ctx, min, max, min_date, max_date, candles) {
   ctx.strokeStyle = "#000000";
 }
 
+function plot_trade(ctx, trade, open_date, min, max) {
+  trade_date = (new Date(trade['date'])).getTime();
+  date = parseInt(open_date.getTime());
+
+  var x = 0;
+  for (; date < trade_date; date += (15 * 60000)) {
+    x++; 
+  }
+  x--;
+
+  y = ((parseFloat(trade['price']) - min) / (max - min)) * height 
+
+  ctx.beginPath();
+  ctx.fillStyle = '#888';
+  ctx.fillRect(margin_x + 2 * x - 2, height - y - 2 + margin_y, 5, 5);
+  ctx.fillStyle = (trade['type'] == 'Buy') ? "#00FF00" : '#FF0000';
+  ctx.fillRect(margin_x + 2 * x - 1, height - y - 1 + margin_y, 3, 3);
+  ctx.closePath();
+}
+
 function plot_candlesticks(new_candles, currency) {
   var c = document.getElementById(currency);
   var ctx = c.getContext("2d");
@@ -247,6 +276,12 @@ function plot_candlesticks(new_candles, currency) {
       ctx.lineTo(margin_x + width + 10, height + margin_y - y);
       ctx.stroke();
       ctx.closePath();
+    }
+
+    trades =states['usdt_' + currency]['trades'] || [];
+
+    for (var i = 0; i < trades.length; i++) {
+      plot_trade(ctx, trades[i], new Date(data[0]['date']), min, max);
     }
   }
 }

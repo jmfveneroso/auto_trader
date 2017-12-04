@@ -6,17 +6,23 @@ import os
 from poloniex import Poloniex
 from database_client import DatabaseClient
 from bottle import route, run, template
+from trade_bot import TradeBot
 
 poloniex = Poloniex()
-db = DatabaseClient()
+bot = TradeBot()
+db = DatabaseClient(bot)
+
+@route('/clear/<currency>')
+def clear(currency):
+  return bot.clear(currency)
 
 @route('/force_buy/<currency>')
 def update(currency):
-  return db.force(currency, 'Buy')
+  return bot.force(currency, 'Buy')
 
 @route('/force_sell/<currency>')
 def update(currency):
-  return db.force(currency, 'Sell')
+  return bot.force(currency, 'Sell')
 
 @route('/update.json')
 def update():
