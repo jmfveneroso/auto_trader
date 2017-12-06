@@ -37,6 +37,12 @@ class TradeBot:
       self.state = json.loads(text)
     f.close()
 
+    for currency in self.state: 
+      s = self.state[currency]
+      s['prediction'   ] = 0
+      s['accuracy'     ] = 0
+      s['std_deviation'] = 0
+
   def save(self):
     f = open('bot_state.json', 'w')
     f.write(json.dumps(self.state))
@@ -73,7 +79,7 @@ class TradeBot:
         fee += trade[2] * trade[0]
         volume += trade[1] * trade[0] * (1 - trade[2])
 
-      quantity = sum([float(t[0]) for t in s['incomplete_trades']])
+      quantity = sum([float(t[0] * (1 - t[2])) for t in s['incomplete_trades']])
       s['invested'] += quantity
       fee = float(fee) / quantity
       price = float(price) / quantity
@@ -93,6 +99,7 @@ class TradeBot:
       self.set_buy_order(currency)
     else:
       result = api.return_order_trades(s['order_number'])
+      print s['order_number']
       print result
 
       # Cancel old order because we are going to update it anyway.
@@ -121,8 +128,10 @@ class TradeBot:
     amount = float(s['invested']) * 0.999
 
     result = api.sell(currency.upper(), price, amount)
+    if 'error' in result:
+      print result
+      return
     s['order_number'] = result['orderNumber']
-    print result
 
     for trade in result['resultingTrades']:
       price = float(trade['rate'])
@@ -204,6 +213,7 @@ class TradeBot:
         s['prediction'   ] = predictions[currency][0]
         s['accuracy'     ] = predictions[currency][1]
         s['std_deviation'] = predictions[currency][2]
+        s['prediction_date'] = predictions[currency][3]
 
       s['lowest_ask'   ] = float(self.ticker[currency]['lowestAsk'])
       s['highest_bid'  ] = float(self.ticker[currency]['highestBid'])
@@ -226,7 +236,8 @@ class TradeBot:
       elif s['status'] == 'Sell':
         self.sell(currency)
       else: # idle.
-        s['status'] = 'Idle'
+        if s['prediction'] == 1:
+          s['status'] = 'Start Buying'
     self.save()
 
   def force(self, currency, status):

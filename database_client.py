@@ -94,9 +94,9 @@ class DatabaseClient:
     last_candle = str_to_datetime(self.candles['usdt_btc'][-1]['date'])
     if (last_candle > self.last_candle):
       self.last_candle = last_candle
-      # for currency in DatabaseClient.currencies:
-      #   # We take out the last candle because it is still being formed.
-      #   self.predictions[currency] = classifier.fit(self.candles[:-1], currency)
+      for currency in DatabaseClient.currencies:
+        # We take out the last candle because it is still being formed.
+        self.predictions[currency] = classifier.fit(self.candles[currency][:-1], currency)
 
   def update_thread(self):
     self.update_candles()

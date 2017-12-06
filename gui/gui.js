@@ -37,7 +37,7 @@ function to_percentage(num) {
 }
 
 function crop_num(num) {
-  return parseFloat(num).toFixed(4)
+  return parseFloat(num).toFixed(6)
 }
 
 function update_trades(currency, trades) {
@@ -66,7 +66,7 @@ function update_info(data) {
     );
 
     $('#' + currencies[i] + '_status'     ).text(state['status']               );
-    $('#' + currencies[i] + '_prediction' ).text(state['prediction']           );
+    $('#' + currencies[i] + '_prediction' ).text(state['prediction'] + ' (' + state['prediction_date'] + ')');
     $('#' + currencies[i] + '_highest_bid').text(crop_num(state['highest_bid']));
     $('#' + currencies[i] + '_lowest_ask' ).text(crop_num(state['lowest_ask'] ));
     $('#' + currencies[i] + '_last_price' ).text(crop_num(state['last_price'] ));
@@ -196,7 +196,6 @@ function plot_trade(ctx, trade, open_date, min, max) {
   for (; date < trade_date; date += (15 * 60000)) {
     x++; 
   }
-  x--;
 
   y = ((parseFloat(trade['price']) - min) / (max - min)) * height 
 

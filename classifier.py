@@ -17,9 +17,10 @@ from sklearn.model_selection import cross_val_score
 from sklearn.feature_extraction import DictVectorizer
 from random import shuffle
 import math
+from misc import str_to_datetime, datetime_to_str
 
 class TradeClassifier:
-  sell_gain = 0.03
+  sell_gain = 0.02
   sell_loss = 0.01
 
   def __init__(self):
@@ -142,7 +143,6 @@ class TradeClassifier:
     return feature_vectors 
 
   def fit(self, candles, currency):
-    candles = candles[currency]
     self.classify_dataset(candles)
     feature_vectors = self.create_feature_vectors(candles)
     shuffle(feature_vectors)
@@ -189,7 +189,8 @@ class TradeClassifier:
     for i in range(0, len(predicted)):
       test[i][2]['prediction'] = predicted[i]
 
-    return predicted[-1], scores.mean(), scores.std()
+    date = datetime_to_str(datetime.datetime.now())
+    return (predicted[-1], scores.mean(), scores.std(), date)
 
   def predict(self, candles, currency):
     model = joblib.load('classifiers/' + currency + '.pkl') 
