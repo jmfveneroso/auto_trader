@@ -37,7 +37,7 @@ function to_percentage(num) {
 }
 
 function crop_num(num) {
-  return parseFloat(num).toFixed(6)
+  return parseFloat(num).toFixed(8)
 }
 
 function update_trades(currency, trades) {

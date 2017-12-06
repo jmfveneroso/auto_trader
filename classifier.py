@@ -10,6 +10,7 @@ from sklearn import datasets
 from sklearn.naive_bayes import GaussianNB
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import AdaBoostClassifier
 from sklearn.svm import LinearSVC
 from sklearn.calibration import calibration_curve
 from sklearn.externals import joblib
@@ -22,6 +23,7 @@ from misc import str_to_datetime, datetime_to_str
 class TradeClassifier:
   sell_gain = 0.02
   sell_loss = 0.01
+  window = 5
 
   def __init__(self):
     pass
@@ -61,10 +63,16 @@ class TradeClassifier:
       candles[i]['buy'] = 1 if buy else 0
     return candles
 
+  def to_relative_price(self, reference_price, price):
+    # return float(price) / reference_price
+    return price
+
   def get_features(self, candles, i):
     features = {}
 
-    resistances   = [c['close'] for c in candles[:i] if c['resistance'] == 0]
+    avg = sum([c['close'] for c in candles[i-50:i]]) / float(len(candles[:i]))
+    ref_price = candles[i - TradeClassifier.window]['min']
+    resistances   = [c['close'] for c in candles[:i] if c['resistance'] == 1]
     supports      = [c['close'] for c in candles[:i] if c['support'] == 1]
     buying_points = [c['close'] for c in candles[:i] if c['buy'] == 1]
 
@@ -74,71 +82,67 @@ class TradeClassifier:
     if green_candle:
       lower_shadow = candles[i]['open'] - candles[i]['min'] 
 
-    candle_size = math.fabs(candles[i]['close'] - candles[i]['open'])
+    # features['upper_shadow'] = candles[i]['max'] - candles[i]['close'] 
 
-    features['open'] = candles[i]['open']
-    features['close'] = candles[i]['close']
-    features['min'] = candles[i]['min']
-    features['max'] = candles[i]['max']
+    # features['open']  = self.to_relative_price(ref_price, candles[i]['open' ])
+    features['close'] = self.to_relative_price(ref_price, candles[i]['close'])
+    # features['min']   = self.to_relative_price(ref_price, candles[i]['min'  ])
+    # features['max']   = self.to_relative_price(ref_price, candles[i]['max'  ])
+    features['relative_to_avg']   =  self.to_relative_price(ref_price, candles[i]['close']) - avg
 
-    window = 4
-    for j in range(i - window, i):
-      features[str(j - (i - window)) + '_open']  = candles[j]['open']
-      features[str(j - (i - window)) + '_close'] = candles[j]['close']
-      features[str(j - (i - window)) + '_min']   = candles[j]['min']
-      features[str(j - (i - window)) + '_max']   = candles[j]['max']
+    red_candles = 0
+    for j in range(i, 0, -1):
+      if candles[i]['close'] < candles[i]['open']:
+        red_candles += 1
+      else:
+        break
 
-    features['candle_length']  = candle_size
+    features['red_candles']  = red_candles
+    features['relative_to_avg']  =  self.to_relative_price(ref_price, candles[i]['close']) - avg
+
+    for j in range(i - TradeClassifier.window, i):
+      # features[str(j - (i - TradeClassifier.window)) + '_open']  = self.to_relative_price(ref_price, candles[j]['open' ])
+      features[str(j - (i - TradeClassifier.window)) + '_close'] = self.to_relative_price(ref_price, candles[j]['close'])
+      # features[str(j - (i - TradeClassifier.window)) + '_candle_size'] = candles[j]['close'] - candles[j]['open']
+      # features[str(j - (i - TradeClassifier.window)) + '_min']   = self.to_relative_price(ref_price, candles[j]['min'  ])
+      # features[str(j - (i - TradeClassifier.window)) + '_max']   = self.to_relative_price(ref_price, candles[j]['max'  ])
+
+    features['candle_length'] = candles[i]['close'] - candles[i]['open']
     features['variance']  = candles[i]['max'] - candles[i]['min']
-    features['green_candle_1'] = candles[i]['close'] > candles[i]['open']
-    features['green_candle_2'] = features['green_candle_1'] and candles[i-1]['close'] > candles[i-1]['open']
-    features['green_candle_3'] = features['green_candle_2'] and candles[i-2]['close'] > candles[i-2]['open']
-    features['big_lower_shadow'] = lower_shadow > candle_size
+    # features['green_candle_1'] = candles[i]['close'] > candles[i]['open']
+    # features['green_candle_2'] = features['green_candle_1'] and candles[i-1]['close'] > candles[i-1]['open']
+    # features['green_candle_3'] = features['green_candle_2'] and candles[i-2]['close'] > candles[i-2]['open']
+    # features['big_lower_shadow'] = lower_shadow > candle_size
 
-    if len(resistances) > 3:
-      features['resistance_1'   ] = resistances[-1]
-      features['resistance_2'   ] = resistances[-2]
-      features['resistance_3'   ] = resistances[-3]
-      features['higher_than_resistance_1'   ] = candles[i]['close'] > resistances[-1]
-      features['higher_than_resistance_2'   ] = candles[i]['close'] > resistances[-2]
-      features['higher_than_resistance_3'   ] = candles[i]['close'] > resistances[-3]
-    else:
-      features['resistance_1'               ] = 0 
-      features['resistance_2'               ] = 0
-      features['resistance_3'               ] = 0
-      features['higher_than_resistance_1'   ] = False
-      features['higher_than_resistance_2'   ] = False
-      features['higher_than_resistance_3'   ] = False
+    for k in range(1, 5):
+      if len(resistances) > k:
+        features['higher_than_resistance_' + str(k)] = candles[i]['close'] - resistances[-k]
+        # features['resistance_' + str(k)] = self.to_relative_price(ref_price, resistances[-k])
+      else:
+        features['higher_than_resistance_' + str(k)] = 0
+        # features['resistance_' + str(k)] = 0
 
-    if len(supports) > 3:
-      features['support_1'       ] = supports[-1]
-      features['support_2'       ] = supports[-2]
-      features['support_3'       ] = supports[-3]
-      features['lower_than_support_1'       ] = candles[i]['close'] < supports[-1]
-      features['lower_than_support_2'       ] = candles[i]['close'] < supports[-2]
-      features['lower_than_support_3'       ] = candles[i]['close'] < supports[-3]
-    else:
-      features['support_1'                  ] = 0 
-      features['support_2'                  ] = 0
-      features['support_3'                  ] = 0
-      features['lower_than_support_1'       ] = False
-      features['lower_than_support_2'       ] = False
-      features['lower_than_support_3'       ] = False
+    for k in range(1, 5):
+      if len(supports) > k:
+        features['higher_than_support_' + str(k)] = candles[i]['close'] - supports[-k]
+        # features['support_' + str(k)] = self.to_relative_price(ref_price, supports[-k])
+      else:
+        features['higher_than_support_' + str(k)] = 0
+        # features['support_' + str(k)] = 0
 
-    if len(buying_points) > 3:
-      features['buying_point_1'] = buying_points[-1]
-      features['buying_point_2'] = buying_points[-2]
-      features['buying_point_3'] = buying_points[-3]
-    else:
-      features['buying_point_1'] = 0
-      features['buying_point_2'] = 0
-      features['buying_point_3'] = 0
+    for k in range(1, 5):
+      if len(buying_points) > k:
+        features['higher_than_buying_point_' + str(k)] = candles[i]['close'] - buying_points[-k]
+        # features['buying_point_' + str(k)] = self.to_relative_price(ref_price, buying_points[-k])
+      else:
+        features['higher_than_buying_point_' + str(k)] = 0
+        # features['buying_point_' + str(k)] = 0
 
     return (features, candles[i]['buy'], candles[i])
 
-  def create_feature_vectors(self, dataset, window=4):
+  def create_feature_vectors(self, dataset):
     feature_vectors = []
-    for i in range(window, len(dataset)):
+    for i in range(TradeClassifier.window, len(dataset)):
       feature_vectors.append(self.get_features(dataset, i))
     return feature_vectors 
 
@@ -151,18 +155,20 @@ class TradeClassifier:
     test = feature_vectors[-10:]
     feature_vectors = feature_vectors[:-10]
     feature_dicts = [v[0] for v in feature_vectors]
-    vectorizer = DictVectorizer(sparse=False)
-    x = vectorizer.fit_transform(feature_dicts)
+    # vectorizer = DictVectorizer(sparse=False)
+    # x = vectorizer.fit_transform(feature_dicts)
+    x = [v[0].values() for v in feature_vectors]
     y = [v[1] for v in feature_vectors]
 
     # model = GaussianNB()
     # model = LinearSVC(C=1.0)
-    model = RandomForestClassifier(n_estimators=200)
+    model = RandomForestClassifier(n_estimators=100)
     # model = LogisticRegression()
+    # model = AdaBoostClassifier(n_estimators=200)
 
     scores = cross_val_score(model, x, y, cv=5)
-    print scores
-    print(currency + " accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
+    # print scores
+    # print(currency + " accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
 
     # predicted = model.predict(x[:-10])
     # for i in range(0, len(predicted)):
@@ -178,13 +184,18 @@ class TradeClassifier:
         if expected[i] == 1: right += 1
         else: wrong += 1
       feature_vectors[-100 + i][2]['prediction'] = predicted[i]
-    print 'right: ', right, 'wrong:', wrong, 'accuracy:', float(right) / (right + wrong)
+    # print 'right: ', right, 'wrong:', wrong, 'accuracy:', float(right) / (right + wrong)
 
+    model = RandomForestClassifier(n_estimators=200)
     model = model.fit(x, y)
     joblib.dump(model, 'classifiers/' + currency + '.pkl') 
+    bla = model.feature_importances_
 
-    feature_dicts = [v[0] for v in test]
-    x = vectorizer.fit_transform(feature_dicts)
+    # for i in range(0, len(feature_dicts[0])):
+    #   print feature_dicts[0].keys()[i], bla[i]
+
+    x = [v[0].values() for v in test]
+    # x = vectorizer.fit_transform(feature_dicts)
     predicted = model.predict(x)
     for i in range(0, len(predicted)):
       test[i][2]['prediction'] = predicted[i]

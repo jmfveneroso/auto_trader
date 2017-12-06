@@ -94,12 +94,47 @@ class DatabaseClient:
     last_candle = str_to_datetime(self.candles['usdt_btc'][-1]['date'])
     if (last_candle > self.last_candle):
       self.last_candle = last_candle
-      for currency in DatabaseClient.currencies:
-        # We take out the last candle because it is still being formed.
-        self.predictions[currency] = classifier.fit(self.candles[currency][:-1], currency)
+    #   for currency in DatabaseClient.currencies:
+    #     # We take out the last candle because it is still being formed.
+    #     self.predictions[currency] = classifier.fit(self.candles[currency][:-1], currency)
+
+  def test_classifier(self):
+    candles = self.candles['usdt_btc']
+    # prediction = classifier.fit(candles, 'usdt_btc')
+    # return
+    volume = float(1)
+    price = float(0)
+    holding = False
+
+    trades = [0, 0]
+    for i in range(192, len(candles)):
+      if holding:
+        if float(candles[i]['min']) < (1 - TradeClassifier.sell_loss) * price:
+          print 'Sold', volume, 'at', candles[i]['date'], 'for $', candles[i]['min']
+          volume = (1 - TradeClassifier.sell_loss) * volume
+          print 'Yield:', volume
+          trades[0] += 1
+          holding = False
+        elif float(candles[i]['max']) > (1 + TradeClassifier.sell_gain) * price:
+          print 'Sold', volume, 'at', candles[i]['date'], 'for $', candles[i]['max']
+          volume = (1 + TradeClassifier.sell_gain) * volume
+          print 'Yield:', volume
+          trades[1] += 1
+          holding = False
+        continue
+
+      # prediction = classifier.fit(candles[i-192:i], 'usdt_btc')
+      prediction = classifier.fit(candles[:i], 'usdt_btc')
+      if prediction[0] == 1: # Buy
+        holding = True
+        price = float(candles[i]['close'])
+        print 'Bought', volume, 'at', candles[i]['date'], 'for $', price
+      print candles[i]['date'], trades
 
   def update_thread(self):
     self.update_candles()
+    self.test_classifier()
+    return
 
     candle_ended = False
     self.running = True
