@@ -77,7 +77,6 @@ class TradeBot:
         s['balance'] += float(trade['total']) * (1 - 0.0025)
         s['invested'] -= quantity
 
-
   def buy(self, currency):
     s = self.state[currency]
 

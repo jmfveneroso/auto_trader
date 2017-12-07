@@ -45,5 +45,5 @@ def index():
 
 if __name__ == "__main__":
   db.start()
-  run(host='localhost', port=8082)
+  # run(host='localhost', port=8082)
   db.stop()

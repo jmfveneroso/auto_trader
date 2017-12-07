@@ -77,7 +77,7 @@ class DatabaseClient:
     return dumps(self.data)
 
   def update_candles(self):
-    after = datetime.datetime.min 
+    after = datetime.datetime.now() - datetime.timedelta(days=5)
     if not self.last_update is None:
       after = self.last_update - datetime.timedelta(minutes=30)
 
@@ -133,7 +133,8 @@ class DatabaseClient:
 
   def update_thread(self):
     self.update_candles()
-    self.test_classifier()
+    # self.test_classifier()
+
     return
 
     candle_ended = False

@@ -16,7 +16,7 @@ class DatabaseServer:
   timeskip = datetime.timedelta(hours=1)
 
   # The amount of trade history we are storing.
-  lifespan = datetime.timedelta(days=5)
+  lifespan = datetime.timedelta(days=30)
 
   # The candle size.
   candle_span = datetime.timedelta(minutes=15)
