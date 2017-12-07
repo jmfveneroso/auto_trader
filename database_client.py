@@ -123,8 +123,8 @@ class DatabaseClient:
           holding = False
         continue
 
-      # prediction = classifier.fit(candles[i-192:i], 'usdt_btc')
-      prediction = classifier.fit(candles[:i], 'usdt_btc')
+      prediction = classifier.fit(candles[i-192:i], 'usdt_btc')
+      # prediction = classifier.fit(candles[:i], 'usdt_btc')
       if prediction[0] == 1: # Buy
         holding = True
         price = float(candles[i]['close'])
@@ -132,9 +132,12 @@ class DatabaseClient:
       print candles[i]['date'], trades
 
   def update_thread(self):
-    self.update_candles()
-    # self.test_classifier()
+    # self.update_candles()
 
+
+    f = open('candles_06_12_2017_11_28.json', 'r')
+    self.candles = json.loads(f.read())
+    self.test_classifier()
     return
 
     candle_ended = False

@@ -21,9 +21,9 @@ import math
 from misc import str_to_datetime, datetime_to_str
 
 class TradeClassifier:
-  sell_gain = 0.02
-  sell_loss = 0.01
-  window = 5
+  sell_gain = 0.045
+  sell_loss = 0.015
+  window = 6
 
   def __init__(self):
     pass
@@ -84,10 +84,10 @@ class TradeClassifier:
 
     # features['upper_shadow'] = candles[i]['max'] - candles[i]['close'] 
 
-    # features['open']  = self.to_relative_price(ref_price, candles[i]['open' ])
+    features['open']  = self.to_relative_price(ref_price, candles[i]['open' ])
     features['close'] = self.to_relative_price(ref_price, candles[i]['close'])
-    # features['min']   = self.to_relative_price(ref_price, candles[i]['min'  ])
-    # features['max']   = self.to_relative_price(ref_price, candles[i]['max'  ])
+    features['min']   = self.to_relative_price(ref_price, candles[i]['min'  ])
+    features['max']   = self.to_relative_price(ref_price, candles[i]['max'  ])
     features['relative_to_avg']   =  self.to_relative_price(ref_price, candles[i]['close']) - avg
 
     red_candles = 0
@@ -101,11 +101,11 @@ class TradeClassifier:
     features['relative_to_avg']  =  self.to_relative_price(ref_price, candles[i]['close']) - avg
 
     for j in range(i - TradeClassifier.window, i):
-      # features[str(j - (i - TradeClassifier.window)) + '_open']  = self.to_relative_price(ref_price, candles[j]['open' ])
+      features[str(j - (i - TradeClassifier.window)) + '_open']  = self.to_relative_price(ref_price, candles[j]['open' ])
       features[str(j - (i - TradeClassifier.window)) + '_close'] = self.to_relative_price(ref_price, candles[j]['close'])
-      # features[str(j - (i - TradeClassifier.window)) + '_candle_size'] = candles[j]['close'] - candles[j]['open']
-      # features[str(j - (i - TradeClassifier.window)) + '_min']   = self.to_relative_price(ref_price, candles[j]['min'  ])
-      # features[str(j - (i - TradeClassifier.window)) + '_max']   = self.to_relative_price(ref_price, candles[j]['max'  ])
+      features[str(j - (i - TradeClassifier.window)) + '_candle_size'] = candles[j]['close'] - candles[j]['open']
+      features[str(j - (i - TradeClassifier.window)) + '_min']   = self.to_relative_price(ref_price, candles[j]['min'  ])
+      features[str(j - (i - TradeClassifier.window)) + '_max']   = self.to_relative_price(ref_price, candles[j]['max'  ])
 
     features['candle_length'] = candles[i]['close'] - candles[i]['open']
     features['variance']  = candles[i]['max'] - candles[i]['min']
@@ -117,26 +117,26 @@ class TradeClassifier:
     for k in range(1, 5):
       if len(resistances) > k:
         features['higher_than_resistance_' + str(k)] = candles[i]['close'] - resistances[-k]
-        # features['resistance_' + str(k)] = self.to_relative_price(ref_price, resistances[-k])
+        features['resistance_' + str(k)] = self.to_relative_price(ref_price, resistances[-k])
       else:
         features['higher_than_resistance_' + str(k)] = 0
-        # features['resistance_' + str(k)] = 0
+        features['resistance_' + str(k)] = 0
 
     for k in range(1, 5):
       if len(supports) > k:
         features['higher_than_support_' + str(k)] = candles[i]['close'] - supports[-k]
-        # features['support_' + str(k)] = self.to_relative_price(ref_price, supports[-k])
+        features['support_' + str(k)] = self.to_relative_price(ref_price, supports[-k])
       else:
         features['higher_than_support_' + str(k)] = 0
-        # features['support_' + str(k)] = 0
+        features['support_' + str(k)] = 0
 
     for k in range(1, 5):
       if len(buying_points) > k:
         features['higher_than_buying_point_' + str(k)] = candles[i]['close'] - buying_points[-k]
-        # features['buying_point_' + str(k)] = self.to_relative_price(ref_price, buying_points[-k])
+        features['buying_point_' + str(k)] = self.to_relative_price(ref_price, buying_points[-k])
       else:
         features['higher_than_buying_point_' + str(k)] = 0
-        # features['buying_point_' + str(k)] = 0
+        features['buying_point_' + str(k)] = 0
 
     return (features, candles[i]['buy'], candles[i])
 
@@ -160,13 +160,13 @@ class TradeClassifier:
     x = [v[0].values() for v in feature_vectors]
     y = [v[1] for v in feature_vectors]
 
-    # model = GaussianNB()
-    # model = LinearSVC(C=1.0)
-    model = RandomForestClassifier(n_estimators=100)
-    # model = LogisticRegression()
-    # model = AdaBoostClassifier(n_estimators=200)
+    # model_ = GaussianNB()
+    # model_ = LinearSVC(C=1.0)
+    # model_ = RandomForestClassifier(n_estimators=100)
+    model_ = LogisticRegression()
+    # model_ = AdaBoostClassifier(n_estimators=200)
 
-    scores = cross_val_score(model, x, y, cv=5)
+    scores = cross_val_score(model_, x, y, cv=5)
     # print scores
     # print(currency + " accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
 
@@ -176,7 +176,7 @@ class TradeClassifier:
 
     right = 0
     wrong = 0
-    model = model.fit(x[:-100], y[:-100])
+    model = model_.fit(x[:-100], y[:-100])
     predicted = model.predict(x[-100:-10])
     expected = y[-100:-10]
     for i in range(0, len(predicted)):
@@ -186,11 +186,11 @@ class TradeClassifier:
       feature_vectors[-100 + i][2]['prediction'] = predicted[i]
     # print 'right: ', right, 'wrong:', wrong, 'accuracy:', float(right) / (right + wrong)
 
-    model = RandomForestClassifier(n_estimators=200)
-    model = model.fit(x, y)
+    # model = RandomForestClassifier(n_estimators=200)
+    model = model_.fit(x, y)
     joblib.dump(model, 'classifiers/' + currency + '.pkl') 
-    bla = model.feature_importances_
 
+    # bla = model.feature_importances_
     # for i in range(0, len(feature_dicts[0])):
     #   print feature_dicts[0].keys()[i], bla[i]
 

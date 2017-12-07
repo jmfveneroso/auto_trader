@@ -100,6 +100,7 @@ class DatabaseServer:
       cursor = collection.find().sort("date", -1).limit(1)
       if cursor.count() > 0:
         start = cursor[0]['date']
+      cursor.close()
 
       while True:
         end = start + DatabaseServer.timeskip
@@ -116,8 +117,11 @@ class DatabaseServer:
           del t['globalTradeID']
 
           # Check if trade record with this id already exists.
-          if not collection.find({ '_id': t['_id'] }).count() > 0:
+          cursor = collection.find({ '_id': t['_id'] })
+          if not cursor.count() > 0:
             collection.insert_one(t)
+          cursor.close()
+        del trades
 
         logger.info('Added ' + str(len(trades)) + ' trades from ' + str(start) + ' to ' + str(end))
         logger.info('Total trade records: ' + str(collection.find().count()))

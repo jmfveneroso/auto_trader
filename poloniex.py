@@ -107,8 +107,8 @@ class Poloniex:
       trade['date'] += datetime.timedelta(hours = -2)
       # trade['date'] = '{:%Y-%m-%d %H:%M:%S}'.format(trade['date'])
 
+    del ret
     return trades
- 
  
   # Returns all of your balances.
   # Outputs:
