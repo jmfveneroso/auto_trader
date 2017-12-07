@@ -121,10 +121,10 @@ class DatabaseServer:
           if not cursor.count() > 0:
             collection.insert_one(t)
           cursor.close()
-        del trades
 
         logger.info('Added ' + str(len(trades)) + ' trades from ' + str(start) + ' to ' + str(end))
         logger.info('Total trade records: ' + str(collection.find().count()))
+        del trades
 
         if end > self.now():
           break

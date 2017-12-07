@@ -32,7 +32,7 @@ class DatabaseClient:
      'usdt_xrp':  [], 'usdt_zec': [], 'usdt_etc': [], 'usdt_str': [], 
      'usdt_dash': [], 'usdt_nxt': [], 'usdt_xmr': [], 'usdt_rep': []
     }
-    self.client = MongoClient('184.72.201.187')
+    self.client = MongoClient('54.89.212.196')
     self.db = self.client.poloniex
     self.last_update = None
     self.last_candle = datetime.datetime.min
